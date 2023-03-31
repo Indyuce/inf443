@@ -1,0 +1,10 @@
+^C:\USERS\CYMPE\DOCUMENTS\POLYTECHNIQUE\2A\INF443_PRACTICE_CODE\SCENES_INF443\03B_MODELING\BUILD\CMAKEFILES\5201967C390322300CE4147DF9E5BA7E\GENERATE.STAMP.RULE
+setlocal
+"D:\Program Files\CMake\bin\cmake.exe" -SC:/Users/cympe/Documents/Polytechnique/2A/inf443_practice_code/scenes_inf443/03b_modeling -BC:/Users/cympe/Documents/Polytechnique/2A/inf443_practice_code/scenes_inf443/03b_modeling/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/cympe/Documents/Polytechnique/2A/inf443_practice_code/scenes_inf443/03b_modeling/build/03b_modeling.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
