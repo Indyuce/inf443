@@ -1,3 +1,0 @@
-C:/Users/cympe/Documents/Polytechnique/2A/inf443_practice_code/scenes_inf443/03b_modeling/build/CMakeFiles/03b_modeling.dir
-C:/Users/cympe/Documents/Polytechnique/2A/inf443_practice_code/scenes_inf443/03b_modeling/build/CMakeFiles/ALL_BUILD.dir
-C:/Users/cympe/Documents/Polytechnique/2A/inf443_practice_code/scenes_inf443/03b_modeling/build/CMakeFiles/ZERO_CHECK.dir
