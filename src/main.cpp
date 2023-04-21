@@ -113,6 +113,7 @@ void animation_loop()
 	scene.inputs.mouse.on_gui = ImGui::GetIO().WantCaptureMouse;
 	scene.inputs.time_interval = time_interval;
 
+
 	// Display the ImGUI interface (button, sliders, etc)
 	scene.display_gui();
 
@@ -147,7 +148,7 @@ void initialize_default_shaders()
 	triangles_drawable::default_texture.initialize_texture_2d_on_gpu(white_image);
 
 	// Set standard uniform color for curve/segment_drawable
-	curve_drawable::default_shader.load(default_path_shaders + "single_color/vert.glsl", default_path_shaders + "single_color/frag.glsl");
+	curve_drawable::default_shader.load(default_path_shaders +"single_color/vert.glsl", default_path_shaders+"single_color/frag.glsl");
 }
 
 

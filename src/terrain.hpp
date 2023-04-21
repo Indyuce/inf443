@@ -1,28 +1,33 @@
 #pragma once
 
 #include "cgp/cgp.hpp"
+#include "environment.hpp"
+
+using namespace cgp;
 
 struct perlin_noise_parameters
 {
-	float persistency = 0.35f;
-	float frequency_gain = 2.0f;
-	int octave = 6;
-	float terrain_height = 0.5f;
+	float persistency;
+	float frequency_gain ;
+	int octave;
+
+	perlin_noise_parameters(float persistency_, float frequency_gain_, float octave_) {
+		persistency = persistency_;
+		frequency_gain = frequency_gain_;
+		octave = octave_;
+	}
 };
 
-float evaluate_terrain_height(float x, float y, float terrain_length, perlin_noise_parameters parameters);
+struct terrain
+{
+	cgp::mesh generate_terrain_mesh();
 
-float evaluate_terrain_height(float u, float v, perlin_noise_parameters parameters);
+	vec3 getPoint(int i, int j, int k);
 
-/** Compute a terrain mesh 
-	The (x,y) coordinates of the terrain are set in [-length/2, length/2].
-	The z coordinates of the vertices are computed using evaluate_terrain_height(x,y).
-	The vertices are sampled along a regular grid structure in (x,y) directions. 
-	The total number of vertices is N*N (N along each direction x/y) 	*/
-cgp::mesh create_terrain_mesh(int N, float length);
+	bool is_in_voxel(cgp::vec3& pos);
 
-std::vector<cgp::vec3> generate_positions_on_terrain(int N, float terrain_length, perlin_noise_parameters parameters);
+	vec3 getCenterPoint(int edge_idx);
 
-// Recompute the vertices of the terrain everytime a parameter is modified
-//  and update the mesh_drawable accordingly
-void update_terrain(cgp::mesh& terrain, cgp::mesh_drawable& terrain_visual, perlin_noise_parameters const& parameters);
+	float evaluate_noise_level(float x, float y, float z);
+};
+
