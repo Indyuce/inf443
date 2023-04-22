@@ -19,61 +19,7 @@ void scene_structure::initialize()
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<> distrib(0, 1);
-	fish0.initialize_data_on_gpu(mesh_load_file_obj("C:/Users/litiw/Info Polytechnique/INF443/Projet/assets/fish0/fish0.obj"));
-	fish0.texture.load_and_initialize_texture_2d_on_gpu("C:/Users/litiw/Info Polytechnique/INF443/Projet/assets/fish0/fish0.png");
-	opengl_shader_structure fish0_shader;
-	fish0_shader.load(
-		project::path + "shaders/fish0/vert.glsl",
-		project::path + "shaders/fish0/frag.glsl");
-	fish0.shader = fish0_shader;
-
-	fish1.initialize_data_on_gpu(mesh_load_file_obj("C:/Users/litiw/Info Polytechnique/INF443/Projet/assets/fish1/fish1.obj"));
-	fish1.texture.load_and_initialize_texture_2d_on_gpu("C:/Users/litiw/Info Polytechnique/INF443/Projet/assets/fish1/fish1.png");
-	opengl_shader_structure fish1_shader;
-	fish1_shader.load(
-		project::path + "shaders/fish1/vert.glsl",
-		project::path + "shaders/fish1/frag.glsl");
-	fish1.shader = fish1_shader;
-
-	fish2.initialize_data_on_gpu(mesh_load_file_obj("C:/Users/litiw/Info Polytechnique/INF443/Projet/assets/fish2/fish2.obj"));
-	fish2.texture.load_and_initialize_texture_2d_on_gpu("C:/Users/litiw/Info Polytechnique/INF443/Projet/assets/fish2/fish2.jpeg");
-	opengl_shader_structure fish2_shader;
-	fish2_shader.load(
-		project::path + "shaders/fish2/vert.glsl",
-		project::path + "shaders/fish2/frag.glsl");
-	fish2.shader = fish2_shader;
-
-	fish3.initialize_data_on_gpu(mesh_load_file_obj("C:/Users/litiw/Info Polytechnique/INF443/Projet/assets/fish3/fish3.obj"));
-	fish3.texture.load_and_initialize_texture_2d_on_gpu("C:/Users/litiw/Info Polytechnique/INF443/Projet/assets/fish3/fish3.png");
-	opengl_shader_structure fish3_shader;
-	fish3_shader.load(
-		project::path + "shaders/fish3/vert.glsl",
-		project::path + "shaders/fish3/frag.glsl");
-	fish3.shader = fish3_shader;
-
-
-	fish4.initialize_data_on_gpu(mesh_load_file_obj("C:/Users/litiw/Info Polytechnique/INF443/Projet/assets/fish4/fish4.obj"));
-	fish4.texture.load_and_initialize_texture_2d_on_gpu("C:/Users/litiw/Info Polytechnique/INF443/Projet/assets/fish4/fish4.jpeg");
-	opengl_shader_structure fish4_shader;
-	fish4_shader.load(
-		project::path + "shaders/fish4/vert.glsl",
-		project::path + "shaders/fish4/frag.glsl");
-	fish4.shader = fish4_shader;
-
-	fish0.model.scaling = 0.05f;
-	fish1.model.scaling = 0.05f;
-	fish2.model.scaling = 0.1f;
-	fish3.model.scaling = 0.05f;
-	fish4.model.scaling = 0.4f;
 	
-	//boid.model.scaling = 0.1f;  //0.04F
-	jellyfish.initialize_data_on_gpu(mesh_load_file_obj("C:/Users/litiw/Info Polytechnique/INF443/Projet/assets/jellyfish/Jellyfish_001.obj"));
-	jellyfish.texture.load_and_initialize_texture_2d_on_gpu("C:/Users/litiw/Info Polytechnique/INF443/Projet/assets/jellyfish/Jellyfish_001_tex.png");
-	opengl_shader_structure jellyfish_shader;
-	jellyfish_shader.load(
-		project::path + "shaders/jellyfish/vert.glsl",
-		project::path + "shaders/jellyfish/frag.glsl");
-	jellyfish.shader = jellyfish_shader;
 	
 	//boid.initialize_data_on_gpu(create_cone_mesh(0.05, 0.1, 0));
 	boid_speed = 0.01;
@@ -223,6 +169,64 @@ cgp::vec3 scene_structure::calculate_cohesion(int i) {
 	return cohesion_coef * (middle/count-fishes[i].position);
 }
 
+
+void scene_structure::initialize_models() {
+	fish0.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/fish0/fish0.obj"));
+	fish0.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/fish0/fish0.png");
+	opengl_shader_structure fish0_shader;
+	fish0_shader.load(
+		project::path + "shaders/fish0/vert.glsl",
+		project::path + "shaders/fish0/frag.glsl");
+	fish0.shader = fish0_shader;
+
+	fish1.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/fish1/fish1.obj"));
+	fish1.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/fish1/fish1.png");
+	opengl_shader_structure fish1_shader;
+	fish1_shader.load(
+		project::path + "shaders/fish1/vert.glsl",
+		project::path + "shaders/fish1/frag.glsl");
+	fish1.shader = fish1_shader;
+
+	fish2.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/fish2/fish2.obj"));
+	fish2.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/fish2/fish2.jpeg");
+	opengl_shader_structure fish2_shader;
+	fish2_shader.load(
+		project::path + "shaders/fish2/vert.glsl",
+		project::path + "shaders/fish2/frag.glsl");
+	fish2.shader = fish2_shader;
+
+	fish3.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/fish3/fish3.obj"));
+	fish3.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/fish3/fish3.png");
+	opengl_shader_structure fish3_shader;
+	fish3_shader.load(
+		project::path + "shaders/fish3/vert.glsl",
+		project::path + "shaders/fish3/frag.glsl");
+	fish3.shader = fish3_shader;
+
+
+	fish4.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/assets/fish4/fish4.obj"));
+	fish4.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/fish4/fish4.jpeg");
+	opengl_shader_structure fish4_shader;
+	fish4_shader.load(
+		project::path + "shaders/fish4/vert.glsl",
+		project::path + "shaders/fish4/frag.glsl");
+	fish4.shader = fish4_shader;
+
+	fish0.model.scaling = 0.05f;
+	fish1.model.scaling = 0.05f;
+	fish2.model.scaling = 0.1f;
+	fish3.model.scaling = 0.05f;
+	fish4.model.scaling = 0.4f;
+	
+	//boid.model.scaling = 0.1f;  //0.04F
+	jellyfish.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/jellyfish/Jellyfish_001.obj"));
+	jellyfish.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/jellyfish/Jellyfish_001_tex.png");
+	opengl_shader_structure jellyfish_shader;
+	jellyfish_shader.load(
+		project::path + "shaders/jellyfish/vert.glsl",
+		project::path + "shaders/jellyfish/frag.glsl");
+	jellyfish.shader = jellyfish_shader;
+}
 /*
 
 cgp::vec3 scene_structure::calculate_color(int i) {

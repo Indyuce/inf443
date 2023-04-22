@@ -72,6 +72,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 	void initialize();    // Standard initialization to be called before the animation loop
 	void display_frame(); // The frame display to be called within the animation loop
 	void display_gui();   // The display of the GUI, also called within the animation loop
+	void initialize_models(); // Initialize the models of the fishes.
 	cgp::vec3 calculate_separation(int i);
 	cgp::vec3 calculate_alignement(int i);
 	cgp::vec3 calculate_cohesion(int i);
