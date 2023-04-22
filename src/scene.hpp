@@ -55,6 +55,29 @@ struct scene_structure : cgp::scene_inputs_generic {
 	mesh_drawable terrain_drawable;
 	terrain terrain_gen;
 
+	/**
+	 *  Fishes
+	*/
+	float boid_speed;
+	float boid_radius;
+	float separation_coef;
+	float alignement_coef;
+	float cohesion_coef;
+	float change_color_coef;
+	int num_fishes;
+	float dt;
+	float t;
+
+
+	cgp::mesh_drawable fish0;
+	cgp::mesh_drawable fish1;
+	cgp::mesh_drawable fish2;
+	cgp::mesh_drawable fish3;
+	cgp::mesh_drawable fish4;
+	cgp::mesh_drawable jellyfish;
+	std::vector<fish> fishes;
+
+
 
 	// ****************************** //
 	// Functions
@@ -65,12 +88,16 @@ struct scene_structure : cgp::scene_inputs_generic {
 	// Standard initialization to be called before the animation loop
 	void display_frame(); // The frame display to be called within the animation loop
 	void display_gui();   // The display of the GUI, also called within the animation loop
-
+	void initialize_models(); // Initialize the models of the fishes.
+	cgp::vec3 calculate_separation(int i);
+	cgp::vec3 calculate_alignement(int i);
+	cgp::vec3 calculate_cohesion(int i);
 
 	void mouse_move_event();
 	void mouse_click_event();
 	void keyboard_event();
 	void idle_frame();
+	
 
 };
 
