@@ -28,7 +28,7 @@ void scene_structure::initialize()
 	terrain_drawable.material.color = { 0.91f, 0.6f, 0.17f };
 	terrain_drawable.material.texture_settings.two_sided = true;
 
-
+	initialize_models();
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<> distrib(0, 1);
@@ -41,7 +41,7 @@ void scene_structure::initialize()
 	alignement_coef = 0.01;
 	cohesion_coef = 0.4;
 	change_color_coef = 0.5;
-	num_fishes = 0;
+	num_fishes = 100;
 	dt = 0.05;
 	t = 0;
 	//colors = {
@@ -107,6 +107,37 @@ float const MOVE_SPEED = .1f;
 // Note that you should avoid having costly computation and large allocation defined there. This function is mostly used to call the draw() functions on pre-existing data.
 void scene_structure::display_frame()
 {
+	t += dt;
+	// Set the light to the current position of the camera
+	environment.light = camera_control.camera_model.position();
+	environment.uniform_generic.uniform_float["time"] = t;
+	for (int i = 0;i < num_fishes;i++) {
+		cgp::vec3 separation = calculate_separation(i);
+		cgp::vec3 alignement = calculate_alignement(i);
+		cgp::vec3 cohesion = calculate_cohesion(i);
+		fishes[i].direction += separation;
+		fishes[i].direction += alignement;
+		fishes[i].direction += cohesion;
+		fishes[i].direction = cgp::normalize(fishes[i].direction);
+		fishes[i].position = fishes[i].position + (boid_speed * fishes[i].direction);
+
+		for (int j = 0;j < 3;j++) {
+			fishes[i].position[j] = fishes[i].position[j] < 5 ? fishes[i].position[j] > 0 ? fishes[i].position[j] : fishes[i].position[j] + 5 : fishes[i].position[j] - 5;
+		}
+
+
+		rotation_transform horiz_transformation = cgp::rotation_transform::from_axis_angle({ 0,0,1 }, 3.14159 / 2);
+		rotation_transform X_transformation = cgp::rotation_transform::from_axis_angle({ 1,0,0 }, 3.14159 / 2);
+		//boid.model.rotation = cgp::rotation_transform::from_vector_transform({ 0,0,1 }, boid_direction[i])*;
+		fishes[i].model.model.rotation = cgp::rotation_transform::from_axis_angle(fishes[i].direction, 3.14159 / 2) * cgp::rotation_transform::from_vector_transform({ 0,0,1 }, fishes[i].direction);
+		fishes[i].model.model.translation = fishes[i].position;
+		fishes[i].model.material.color = { 1,1,1 };
+		//boid.material.color = boid_color[i];
+		environment.uniform_generic.uniform_vec3["head_position"] = fishes[i].position;
+		environment.uniform_generic.uniform_vec3["direction"] = fishes[i].direction;
+		environment.uniform_generic.uniform_float["frequency"] = fishes[i].frequency;
+		draw(fishes[i].model, environment);
+	}
 	// Update time
 	timer.update();
 
@@ -265,7 +296,7 @@ void scene_structure::initialize_models() {
 	fish3.shader = fish3_shader;
 
 
-	fish4.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/assets/fish4/fish4.obj"));
+	fish4.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/fish4/fish4.obj"));
 	fish4.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/fish4/fish4.jpeg");
 	opengl_shader_structure fish4_shader;
 	fish4_shader.load(

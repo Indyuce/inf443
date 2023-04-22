@@ -1,7 +1,6 @@
 #include "scene.hpp"
 
 #include "terrain.hpp"
-#include "tree.hpp"
 #include <random>
 
 using namespace cgp;
@@ -13,8 +12,7 @@ void scene_structure::initialize()
 {
 	camera_control.initialize(inputs, window); // Give access to the inputs and window global state to the camera controler
 	camera_control.set_rotation_axis_z();
-	camera_control.look_at({ 15.0f,6.0f,6.0f }, {0,0,0});
-	global_frame.initialize_data_on_gpu(mesh_primitive_frame());
+	camera_control.look_at({ 15.0f,6.0f,6.0f }, {0,0,0});;
 
 	std::random_device rd;
 	std::mt19937 gen(rd());
@@ -76,10 +74,6 @@ void scene_structure::initialize()
 
 void scene_structure::display_frame()
 {	
-
-	global_frame.model.rotation =cgp::rotation_transform::from_vector_transform({ 1,0,0 }, {0,0,1});
-	draw(global_frame, environment);
-
 	t += dt;
 	// Set the light to the current position of the camera
 	environment.light = camera_control.camera_model.position();
@@ -103,9 +97,6 @@ void scene_structure::display_frame()
 		rotation_transform X_transformation = cgp::rotation_transform::from_axis_angle({ 1,0,0 }, 3.14159 / 2);
 		//boid.model.rotation = cgp::rotation_transform::from_vector_transform({ 0,0,1 }, boid_direction[i])*;
 		fishes[i].model.model.rotation = cgp::rotation_transform::from_axis_angle(fishes[i].direction, 3.14159 / 2) * cgp::rotation_transform::from_vector_transform({0,0,1}, fishes[i].direction);
-		global_frame.model.translation = fishes[i].position;
-		global_frame.model.rotation = horiz_transformation * X_transformation * cgp::rotation_transform::from_vector_transform({ 0,0,1 }, fishes[i].direction);
-		//draw(global_frame, environment);
 		fishes[i].model.model.translation = fishes[i].position;
 		fishes[i].model.material.color = { 1,1,1 };
 		//boid.material.color = boid_color[i];

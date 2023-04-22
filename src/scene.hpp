@@ -31,6 +31,15 @@ struct gui_parameters {
 	float attenuation_distance = 70.0f;
 };
 
+struct fish {
+	cgp::vec3 position;
+	cgp::vec3 direction;
+	float speed;
+	mesh_drawable model;
+	int modelId;
+	float frequency;
+
+};
 // The structure of the custom scene
 struct scene_structure : cgp::scene_inputs_generic {
 	
