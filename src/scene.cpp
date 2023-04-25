@@ -1,6 +1,7 @@
 
 
 #include "scene.hpp"
+#include "animation.cpp"
 #include <random>
 
 using namespace cgp;
@@ -35,26 +36,15 @@ void scene_structure::initialize()
 	separation_coef = 0.01;
 	alignement_coef = 0.01;
 	cohesion_coef = 0.4;
+
+	fish_manager = fish_manager::fish_manager(0.001, 0.4, 0.01, 1,0.01,1,3,5);
 	change_color_coef = 0.5;
 	num_fishes = 0;
 	dt = 0.05;
 	t = 0;
-	//colors = {
-	//cgp::vec3(0.97f, 0.16f, 0.36f), // bright red
-	//cgp::vec3(0.98f, 0.73f, 0.05f), // orange
-	//cgp::vec3(0.94f, 0.76f, 0.32f), // yellow
-	//cgp::vec3(0.16f, 0.50f, 0.73f), // bright blue
-	//cgp::vec3(0.36f, 0.77f, 0.87f), // light blue
-	//cgp::vec3(0.01f, 0.85f, 0.67f), // turquoise
-	//cgp::vec3(0.12f, 0.58f, 0.48f), // teal
-	//cgp::vec3(0.58f, 0.38f, 0.73f), // purple
-	//cgp::vec3(0.87f, 0.36f, 0.70f), // magenta
-	//cgp::vec3(0.95f, 0.65f, 0.76f), // pink
-	//cgp::vec3(0.99f, 0.99f, 0.99f)  // almost white
-	//};
 
+	fish fish;
 	for (int i = 0;i < num_fishes;i++) {
-		fish fish;
 		fish.direction = { 1,0,0 };
 		fish.position = { 5 * distrib(gen), 5 * distrib(gen), 5 * distrib(gen) };
 		fish.speed = boid_speed;
@@ -78,7 +68,7 @@ void scene_structure::initialize()
 			fish.model = fish4;
 			break;
 		}
-		fishes.push_back(fish);
+		fish_manager.add(fish);
 	}
 
 	// Remove warnings for unset uniforms
@@ -104,32 +94,19 @@ void scene_structure::display_frame()
 	// Set the light to the current position of the camera
 	environment.light = camera_control.camera_model.position();
 	environment.uniform_generic.uniform_float["time"] = t;
-	for (int i = 0;i < num_fishes;i++) {
-		cgp::vec3 separation = calculate_separation(i);
-		cgp::vec3 alignement = calculate_alignement(i);
-		cgp::vec3 cohesion = calculate_cohesion(i);
-		fishes[i].direction += separation;
-		fishes[i].direction += alignement;
-		fishes[i].direction += cohesion;
-		fishes[i].direction = cgp::normalize(fishes[i].direction);
-		fishes[i].position = fishes[i].position + (boid_speed * fishes[i].direction);
-
-		for (int j = 0;j < 3;j++) {
-			fishes[i].position[j] = fishes[i].position[j] < 5 ? fishes[i].position[j] > 0 ? fishes[i].position[j] : fishes[i].position[j] + 5 : fishes[i].position[j] - 5;
-		}
-
-
+	for (int i = 0;i < fish_manager.fishes.size();i++) {
+		fish fish = fish_manager.fishes[i];
 		rotation_transform horiz_transformation = cgp::rotation_transform::from_axis_angle({ 0,0,1 }, 3.14159 / 2);
 		rotation_transform X_transformation = cgp::rotation_transform::from_axis_angle({ 1,0,0 }, 3.14159 / 2);
 		//boid.model.rotation = cgp::rotation_transform::from_vector_transform({ 0,0,1 }, boid_direction[i])*;
-		fishes[i].model.model.rotation = cgp::rotation_transform::from_axis_angle(fishes[i].direction, 3.14159 / 2) * cgp::rotation_transform::from_vector_transform({ 0,0,1 }, fishes[i].direction);
-		fishes[i].model.model.translation = fishes[i].position;
-		fishes[i].model.material.color = { 1,1,1 };
+		fish.model.model.rotation = cgp::rotation_transform::from_axis_angle(fish.direction, 3.14159 / 2) * cgp::rotation_transform::from_vector_transform({ 0,0,1 }, fish.direction);
+		fish.model.model.translation = fish.position;
+		fish.model.material.color = { 1,1,1 };
 		//boid.material.color = boid_color[i];
-		environment.uniform_generic.uniform_vec3["head_position"] = fishes[i].position;
-		environment.uniform_generic.uniform_vec3["direction"] = fishes[i].direction;
-		environment.uniform_generic.uniform_float["frequency"] = fishes[i].frequency;
-		draw(fishes[i].model, environment);
+		environment.uniform_generic.uniform_vec3["head_position"] = fish.position;
+		environment.uniform_generic.uniform_vec3["direction"] = fish.direction;
+		environment.uniform_generic.uniform_float["frequency"] = fish.frequency;
+		draw(fish.model, environment);
 	}
 	// Update time
 	timer.update();
@@ -186,73 +163,6 @@ void scene_structure::display_gui()
 	ImGui::ColorEdit3("Fog Color", &environment.background_color[0]);
 	ImGui::SliderFloat("Fog Distance", &gui.fog_distance, 100.0f, 1000.0f);
 	ImGui::SliderFloat("Attenuation Distance", &gui.attenuation_distance, 100.0f, 1000.0f);
-
-	/*
-	bool update = false;
-	update |= ImGui::SliderFloat("Persistance", &parameters.persistency, 0.1f, 0.6f);
-	update |= ImGui::SliderFloat("Frequency gain", &parameters.frequency_gain, 1.5f, 2.5f);
-	update |= ImGui::SliderInt("Octave", &parameters.octave, 1, 8);
-	update |= ImGui::SliderFloat("Multiplier", &parameters.multiplier, 0.1f, 1.5f);
-
-	// Update terrain if needed
-	if (update) {
-		mesh terrain_mesh = terrain_gen.generate_terrain_mesh(parameters);
-		terrain_drawable.initialize_data_on_gpu(terrain_mesh);
-	}*/
-}
-
-
-
-cgp::vec3 scene_structure::calculate_separation(int i) {
-	cgp::vec3  sum= {0,0,0};
-	for (int j = 0;j < num_fishes;j++)
-{
-		cgp::vec3 delta = fishes[j].position - fishes[i].position;
-		if (cgp::norm(delta) >= 0.001&& cgp::norm(delta) < boid_radius) {
-			sum += -delta / std::pow(cgp::norm(delta), 2);
-		}
-		
-	}
-	return separation_coef * sum;
-}
-cgp::vec3 scene_structure::calculate_alignement(int i) {
-	cgp::vec3  sum = { 0,0,0 };
-	int modelId = fishes[i].modelId;
-	int count = 0;
-	for (int j = 0;j < num_fishes;j++)
-	{
-		if (fishes[j].modelId == modelId) {
-			cgp::vec3 delta = fishes[j].direction - fishes[i].direction;
-			if (cgp::norm(delta) >= 0.001 && cgp::norm(delta) < boid_radius) {
-				sum += fishes[j].direction;
-				count++;
-			}
-		}
-
-	}
-	if (count == 0)
-		return { 0,0,0 };
-	return alignement_coef * (sum/count);
-}
-
-
-cgp::vec3 scene_structure::calculate_cohesion(int i) {
-	cgp::vec3  middle = { 0,0,0 };
-	int modelId = fishes[i].modelId;
-	int count = 0;
-	for (int j = 0;j < num_fishes;j++)
-	{
-		if (fishes[j].modelId == modelId) {
-			cgp::vec3 delta = fishes[j].position - fishes[i].position;
-			if (cgp::norm(delta) < boid_radius) {
-				middle += fishes[j].position;
-				count++;
-			}
-		}
-
-	}
-	
-	return cohesion_coef * (middle/count-fishes[i].position);
 }
 
 void scene_structure::initialize_models() {
@@ -311,6 +221,15 @@ void scene_structure::initialize_models() {
 		project::path + "shaders/jellyfish/vert.glsl",
 		project::path + "shaders/jellyfish/frag.glsl");
 	jellyfish.shader = jellyfish_shader;
+
+
+	alga.initialize_data_on_gpu(mesh_load_file_obj(project::path + "assets/alga/alga.obj"));
+	alga.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/alga/alga.jpeg");
+	opengl_shader_structure alga_shader;
+	alga_shader.load(
+		project::path + "shaders/alga/vert.glsl",
+		project::path + "shaders/alga/frag.glsl");
+	alga.shader = alga_shader;
 }
 
 
