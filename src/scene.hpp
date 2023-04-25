@@ -38,8 +38,8 @@ struct fish {
 	mesh_drawable model;
 	int modelId;
 	float frequency;
-
 };
+
 // The structure of the custom scene
 struct scene_structure : cgp::scene_inputs_generic {
 	
@@ -61,8 +61,8 @@ struct scene_structure : cgp::scene_inputs_generic {
 	timer_basic timer;
 
 	// Terrain
-	mesh_drawable terrain_drawable;
 	terrain terrain_gen;
+	chunk_data* drawable_chunk;
 
 	/**
 	 *  Fishes

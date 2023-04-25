@@ -288,25 +288,28 @@ int const EDGES[12][2] = {
     {3, 7}
 };
 
-int const L = 50;
+int toIndex(int x, int y, int z) {
+    return x + y * chunk_data::CHUNK_SIZE + z * chunk_data::CHUNK_SIZE * chunk_data::CHUNK_SIZE;
+}
 
+chunk_data* terrain::generate_chunk_data(int chunk_x, int chunk_y) {
 
-mesh terrain::generate_terrain_mesh() {
-    mesh m;
-
-    int VOXEL[L][L][L];
-    int mesh_counter = 0;
+    // Initialize empty chunk data
+    chunk_data* data = new chunk_data();
 
     // Calculate voxel using treshold
-    for (int x = 0; x < L; x++)
-        for (int y = 0; y < L; y++)
-            for (int z = 0; z < L; z++)
-                VOXEL[x][y][z] = is_in_voxel(vec3(x, y, z));
+    for (int x = 0; x < chunk_data::CHUNK_SIZE; x++)
+        for (int y = 0; y < chunk_data::CHUNK_SIZE; y++)
+            for (int z = 0; z < chunk_data::CHUNK_HEIGHT; z++)
+                (data->voxel)[toIndex(x, y, z)] = is_in_voxel(x, y, z);
+
+    mesh* m = &(data->chunk_mesh);
+    int mesh_counter = 0;
 
     // Cube marching
-    for (int i = 0; i < L - 1; i++)
-        for (int j = 0; j < L - 1; j++)
-            for (int k = 0; k < L - 1; k++) {
+    for (int i = 0; i < chunk_data::CHUNK_SIZE - 1; i++)
+        for (int j = 0; j < chunk_data::CHUNK_SIZE - 1; j++)
+            for (int k = 0; k < chunk_data::CHUNK_HEIGHT - 1; k++) {
                 int idx = 0;
 
                 // Calculate index value
@@ -315,86 +318,96 @@ mesh terrain::generate_terrain_mesh() {
                     int x = i + offset[0];
                     int y = j + offset[1];
                     int z = k + offset[2];
-                    if (VOXEL[x][y][z])
+                    if (data->voxel[toIndex(x, y, z)])
                         idx += pow(2, p);
                 }
 
                 // Find triangulation and add to mesh
                 const int* tri = TRIANGULATIONS[idx];
                 int c = 0;
-                vec3 ref_point = getPoint(i, j, k);
+                vec3 ref_point = vec3(chunk_x * chunk_data::CHUNK_SIZE + i, chunk_y * chunk_data::CHUNK_SIZE + j, k);
                 while (c < 15) {
                     if (tri[c] == -1)
                         break;
 
-                    vec3 e1 = getCenterPoint(tri[c + 0]);
-                    vec3 e2 = getCenterPoint(tri[c + 1]);
-                    vec3 e3 = getCenterPoint(tri[c + 2]);
+                    vec3 e1 = interpolate(ref_point, tri[c + 0]);
+                    vec3 e2 = interpolate(ref_point, tri[c + 1]);
+                    vec3 e3 = interpolate(ref_point, tri[c + 2]);
 
-                    m.position.push_back(ref_point + e1);
-                    m.position.push_back(ref_point + e2);
-                    m.position.push_back(ref_point + e3);
+                    m->position.push_back(ref_point + e1);
+                    m->position.push_back(ref_point + e2);
+                    m->position.push_back(ref_point + e3);
 
-                    m.connectivity.push_back(uint3(mesh_counter, mesh_counter + 1, mesh_counter + 2));
+                    m->connectivity.push_back(uint3(mesh_counter, mesh_counter + 1, mesh_counter + 2));
                     c += 3;
                     mesh_counter += 3;
                 }
             }
 
-    // Fills colors and normal fields
-    m.fill_empty_field();
+    data->initialize();
 
-    return m;
+    return data;
 }
 
-vec3 terrain::getPoint(int i, int j, int k) {
-    int offset = L / 2;
-    return vec3((float) (i - offset), (float) (j - offset), (float) (k - offset));
-}
-
-vec3 terrain::getCenterPoint(int edge_idx) {
+// Interpolates point on edge
+vec3 terrain::interpolate(vec3& ref_point, int edge_idx) {
     const int* point_data = EDGES[edge_idx];
-    const int* p1 = POINTS[point_data[0]];
-    const int* p2 = POINTS[point_data[1]];
+    const int* offset1 = POINTS[point_data[0]];
+    const int* offset2 = POINTS[point_data[1]];
+    
+    const vec3 p1 = vec3((float)offset1[0], (float)offset1[1], (float)offset1[2]);
+    const vec3 p2 = vec3((float)offset2[0], (float)offset2[1], (float)offset2[2]);
+    
+    const float pot1 = potential(ref_point + p1);
+    const float pot2 = potential(ref_point + p2);
 
-    float x = ((float)(p1[0] + p2[0])) / 2.0f;
-    float y = ((float)(p1[1] + p2[1])) / 2.0f;
-    float z = ((float)(p1[2] + p2[2])) / 2.0f;
-    return vec3(x, y, z);
+    // 0 is somewhere within this max - min
+    const float tot = std::abs(pot2 - pot1);
+    const vec3 offset = p1 * (1.0f - std::abs(pot2) / tot) + p2 * (1.0f - std::abs(pot1) / tot);
+    return offset; //* chunk_data::SCALE;
 }
 
 /* PROCEDURAL TERRAIN GENERATION */
 
-float const NOISE_THRESHOLD = 1;
+float const NOISE_THRESHOLD = 0;
 
 /*
 * Perlin noise is added to the total noise level to generate the floor level at z close to 0
 * This noise is multiplied by exp(-z/d) to reduce influence of this noise at higher z values.
 * d is the vertical attenuation distance.
-* 
+*
 * The multiplier is a multiplicative coefficient for the floor noise.
-* 
+*
 * Floor noise only depends on (x, y) to make sure there are no holes. The scale factor is a
 * multiplier for the X,Y coords before they are provided to the Perlin noise function.
 *
 * Value of d
 */
 float const FLOOR_NOISE_VERTICAL_ATTENUATION_DISTANCE = 10.0f;
-float const FLOOR_NOISE_MULTIPLIER = 2.0f;
-float const FLOOR_NOISE_SCALE_FACTOR = 0.01f;
-perlin_noise_parameters const FLOOR_NOISE_PERLIN = perlin_noise_parameters(1.0f, 2.0f, 1);
+perlin_noise_parameters const FLOOR_PERLIN = perlin_noise_parameters(1.0f, 2.0f, 1, .01f, 2.0f);
+perlin_noise_parameters const ROCKS_PERLIN = perlin_noise_parameters(1.0f, 2.0f, 1, .05f, 15.0f);
 
-float terrain::evaluate_noise_level(float x, float y, float z)
+float terrain::potential(vec3& pos) {
+    return potential(pos.x, pos.y, pos.z);
+}
+
+float terrain::potential(float x, float y, float z)
 {
     float noise = 0.0f;
 
-    noise += 3.0f * exp(-z / FLOOR_NOISE_VERTICAL_ATTENUATION_DISTANCE);
-    float const floor_noise = noise_perlin({ x * FLOOR_NOISE_SCALE_FACTOR, y * FLOOR_NOISE_SCALE_FACTOR }, FLOOR_NOISE_PERLIN.octave, FLOOR_NOISE_PERLIN.persistency, FLOOR_NOISE_PERLIN.frequency_gain);
-    noise += floor_noise * exp(-z / FLOOR_NOISE_VERTICAL_ATTENUATION_DISTANCE) * FLOOR_NOISE_MULTIPLIER;
+    // Floor
+    float const floor_pot = noise_perlin({ x * FLOOR_PERLIN.scale, y * FLOOR_PERLIN.scale }, FLOOR_PERLIN.octave, FLOOR_PERLIN.persistency, FLOOR_PERLIN.frequency_gain);
+    noise += (floor_pot * FLOOR_PERLIN.multiplier + 3) * exp(-z / FLOOR_NOISE_VERTICAL_ATTENUATION_DISTANCE);
 
-    return noise;
+    // Rocks on top
+    float rocks_pot = noise_perlin({ x * ROCKS_PERLIN.scale, y * ROCKS_PERLIN.scale }, ROCKS_PERLIN.octave, ROCKS_PERLIN.persistency, ROCKS_PERLIN.frequency_gain);
+    rocks_pot *= exp(-z / FLOOR_NOISE_VERTICAL_ATTENUATION_DISTANCE / 2) * ROCKS_PERLIN.multiplier;
+    rocks_pot = std::max(0.0f, rocks_pot - 2.0f);
+    noise += rocks_pot;
+
+    return noise - 1;
 }
 
-bool terrain::is_in_voxel(cgp::vec3& pos) {
-    return evaluate_noise_level(pos.x, pos.y, pos.z) > NOISE_THRESHOLD;
+bool terrain::is_in_voxel(float x, float y, float z) {
+    return potential(x, y, z) > NOISE_THRESHOLD;
 }

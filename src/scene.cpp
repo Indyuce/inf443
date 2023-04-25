@@ -22,17 +22,12 @@ void scene_structure::initialize()
 	// ********************************************** //
 
     // Terrain
-    mesh terrain_mesh = terrain_gen.generate_terrain_mesh();
-    terrain_drawable.initialize_data_on_gpu(terrain_mesh);
-	terrain_drawable.model.scaling = 1.0f;
-	terrain_drawable.material.color = { 0.91f, 0.6f, 0.17f };
-	terrain_drawable.material.texture_settings.two_sided = true;
+	drawable_chunk = terrain_gen.generate_chunk_data(0, 0);
 
 	initialize_models();
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<> distrib(0, 1);
-	
 	
 	//boid.initialize_data_on_gpu(create_cone_mesh(0.05, 0.1, 0));
 	boid_speed = 0.01;
@@ -41,7 +36,7 @@ void scene_structure::initialize()
 	alignement_coef = 0.01;
 	cohesion_coef = 0.4;
 	change_color_coef = 0.5;
-	num_fishes = 100;
+	num_fishes = 0;
 	dt = 0.05;
 	t = 0;
 	//colors = {
@@ -89,16 +84,14 @@ void scene_structure::initialize()
 	// Remove warnings for unset uniforms
 	cgp_warning::max_warning = 0;
 
-	cgp::mesh test;
-
 	// Load the custom shader
-	opengl_shader_structure shader_custom;
+	cgp::opengl_shader_structure shader_custom;
 	shader_custom.load(
 		project::path + "shaders/shading_custom/vert.glsl",
 		project::path + "shaders/shading_custom/frag.glsl");
 
 	// Affect the loaded shader to the mesh_drawable
-	terrain_drawable.shader = shader_custom;
+	drawable_chunk->drawable.shader = shader_custom;
 }
 
 float const MOVE_SPEED = .1f;
@@ -174,7 +167,7 @@ void scene_structure::display_frame()
 	// the general syntax to display a mesh is:
 	//   draw(mesh_drawableName, environment);
 	// Note: scene is used to set the uniform parameters associated to the camera, light, etc. to the shader
-    draw(terrain_drawable, environment);
+    draw(drawable_chunk->drawable, environment);
 }
 
 void scene_structure::display_gui()
