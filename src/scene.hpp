@@ -3,6 +3,7 @@
 
 #include "cgp/cgp.hpp"
 #include "environment.hpp"
+#include "animation.hpp"
 #include "terrain.hpp"
 
 // This definitions allow to use the structures: mesh, mesh_drawable, etc. without mentionning explicitly cgp::
@@ -31,15 +32,6 @@ struct gui_parameters {
 	float attenuation_distance = 70.0f;
 };
 
-struct fish {
-	cgp::vec3 position;
-	cgp::vec3 direction;
-	float speed;
-	mesh_drawable model;
-	int modelId;
-	float frequency;
-
-};
 // The structure of the custom scene
 struct scene_structure : cgp::scene_inputs_generic {
 	
@@ -84,7 +76,8 @@ struct scene_structure : cgp::scene_inputs_generic {
 	cgp::mesh_drawable fish3;
 	cgp::mesh_drawable fish4;
 	cgp::mesh_drawable jellyfish;
-	std::vector<fish> fishes;
+	cgp::mesh_drawable alga;
+	fish_manager fish_manager;
 
 
 
