@@ -1,11 +1,23 @@
 
 
 #include "scene.hpp"
-#include "animation.cpp"
+#include "animation.hpp"
 #include <random>
 
 using namespace cgp;
 
+scene_structure::scene_structure() {
+	boid_speed = 0.01;
+	boid_radius = 1;
+	separation_coef = 0.01;
+	alignement_coef = 0.01;
+	cohesion_coef = 0.4;
+
+	change_color_coef = 0.5;
+	num_fishes = 0;
+	dt = 0.05;
+	t = 0;
+}
 
 // This function is called only once at the beginning of the program
 // This function can contain any complex operation that can be pre-computed once
@@ -31,18 +43,7 @@ void scene_structure::initialize()
 	std::uniform_real_distribution<> distrib(0, 1);
 	
 	//boid.initialize_data_on_gpu(create_cone_mesh(0.05, 0.1, 0));
-	boid_speed = 0.01;
-	boid_radius = 1;
-	separation_coef = 0.01;
-	alignement_coef = 0.01;
-	cohesion_coef = 0.4;
-
-	fish_manager = fish_manager::fish_manager(0.001, 0.4, 0.01, 1,0.01,1,3,5);
-	change_color_coef = 0.5;
-	num_fishes = 0;
-	dt = 0.05;
-	t = 0;
-
+	
 	fish fish;
 	for (int i = 0;i < num_fishes;i++) {
 		fish.direction = { 1,0,0 };
@@ -90,10 +91,14 @@ float const MOVE_SPEED = .1f;
 // Note that you should avoid having costly computation and large allocation defined there. This function is mostly used to call the draw() functions on pre-existing data.
 void scene_structure::display_frame()
 {
+	// Increment time
 	t += dt;
+	
 	// Set the light to the current position of the camera
 	environment.light = camera_control.camera_model.position();
 	environment.uniform_generic.uniform_float["time"] = t;
+
+	// Draw fishes
 	for (int i = 0;i < fish_manager.fishes.size();i++) {
 		fish fish = fish_manager.fishes[i];
 		rotation_transform horiz_transformation = cgp::rotation_transform::from_axis_angle({ 0,0,1 }, 3.14159 / 2);
@@ -108,6 +113,7 @@ void scene_structure::display_frame()
 		environment.uniform_generic.uniform_float["frequency"] = fish.frequency;
 		draw(fish.model, environment);
 	}
+
 	// Update time
 	timer.update();
 
@@ -235,8 +241,7 @@ void scene_structure::initialize_models() {
 
 void scene_structure::mouse_move_event()
 {
-	if (!inputs.keyboard.shift)
-		camera_control.action_mouse_move(environment.camera_view);
+	camera_control.action_mouse_move(environment.camera_view);
 }
 void scene_structure::mouse_click_event()
 {

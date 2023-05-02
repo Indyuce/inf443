@@ -1,14 +1,14 @@
 #include "animation.hpp"
 
 using namespace cgp;
-fish_manager::fish_manager(float separation_coef, float cohesion_coef, float alignement_coef,float fish_radius,float fish_speed,int num_alga_group,int min_alga,int max_alga) {
-	this->alignement_coef = alignement_coef;
-	this->cohesion_coef = cohesion_coef;
-	this->separation_coef = separation_coef;
-	this->fish_radius = fish_radius;
-	this->fish_speed = fish_speed;
 
-	
+fish_manager::fish_manager() {
+	this->alignement_coef = 0.001f;
+	this->cohesion_coef = 0.4f;
+	this->separation_coef = 0.01f;
+	this->fish_radius = 1.0f;
+	this->fish_speed = 0.01f;
+	//, ,, , , 1, 3, 5
 }
 
 void fish_manager::add(fish fish) {

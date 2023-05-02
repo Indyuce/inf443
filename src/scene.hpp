@@ -32,17 +32,10 @@ struct gui_parameters {
 	float attenuation_distance = 70.0f;
 };
 
-struct fish {
-	cgp::vec3 position;
-	cgp::vec3 direction;
-	float speed;
-	mesh_drawable model;
-	int modelId;
-	float frequency;
-};
-
 // The structure of the custom scene
 struct scene_structure : cgp::scene_inputs_generic {
+
+	scene_structure();
 	
 	// ****************************** //
 	// Elements and shapes of the scene
@@ -77,8 +70,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 	int num_fishes;
 	float dt;
 	float t;
-
-
+	
 	cgp::mesh_drawable fish0;
 	cgp::mesh_drawable fish1;
 	cgp::mesh_drawable fish2;
@@ -86,9 +78,8 @@ struct scene_structure : cgp::scene_inputs_generic {
 	cgp::mesh_drawable fish4;
 	cgp::mesh_drawable jellyfish;
 	cgp::mesh_drawable alga;
+
 	fish_manager fish_manager;
-
-
 
 	// ****************************** //
 	// Functions
@@ -100,19 +91,11 @@ struct scene_structure : cgp::scene_inputs_generic {
 	void display_frame(); // The frame display to be called within the animation loop
 	void display_gui();   // The display of the GUI, also called within the animation loop
 	void initialize_models(); // Initialize the models of the fishes.
-	cgp::vec3 calculate_separation(int i);
-	cgp::vec3 calculate_alignement(int i);
-	cgp::vec3 calculate_cohesion(int i);
+
 
 	void mouse_move_event();
 	void mouse_click_event();
 	void keyboard_event();
 	void idle_frame();
 	
-
 };
-
-
-
-
-
