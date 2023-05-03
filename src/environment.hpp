@@ -8,8 +8,26 @@ using namespace cgp;
 
 struct environment_structure : environment_generic_structure
 {
+
+
+	float offset = -9.0f;
+	float hmul = 1.0f;
+		float mult = 7.0f;
+
+	// Light parameters
+	vec3 light_color = { .988f, .898f, .439f };
+	vec2 light_direction = { 0.0f, 90.0f };
+	float ambiant = 0.3f;
+	float diffuse = 0.8f;
+	float specular = 0.03f;
+	float direct = 2.35f;
+	int directExp = 410;
+	int specularExp = 2;
+	float fog_distance = 1000.0f;
+	float attenuation_distance = 70.0f;
+
 	// Color of the background of the scene
-	vec3 background_color; // Used in the main program
+	vec3 background_color = { 1,1,1 }; // Used in the main program
 
 	// The position/orientation of a camera that can rotates freely around a specific position
 	mat4 camera_view;
@@ -17,15 +35,10 @@ struct environment_structure : environment_generic_structure
 	// A projection structure (perspective or orthogonal projection)
 	mat4 camera_projection;
 
-	// The position of a light
-	vec3 light;
-
 	// Additional uniforms that can be attached to the environment if needed (empty by default)
 	uniform_generic_structure uniform_generic;
-
-	environment_structure();
+	
 	void send_opengl_uniform(opengl_shader_structure const& shader, bool expected = true) const override;
-
 };
 
 

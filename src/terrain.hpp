@@ -27,14 +27,27 @@ struct terrain
 {
 	// std::unordered_map<int, chunk_data> loaded_chunks;
 
-	chunk_data* generate_chunk_data(int chunk_x, int chunk_y);
+	chunk_data* generate_chunk_data(int chunk_x, int chunk_y, opengl_shader_structure& shader);
 
-	vec3 interpolate(vec3& ref_point, int edge_idx);
+	// Compute a grid filled with the value of some scalar function - the size of the grid is given by the domain
+	cgp::grid_3D<float> compute_scalar_field(cgp::spatial_domain_grid_3D const& domain);
 
-	float potential(vec3& pos);
+	float potential(spatial_domain_grid_3D const& domain, vec3 const& pos);
 
-	float potential(float x, float y, float z);
+	static const int XY_LENGTH = 100;
+	static const int Z_LENGTH = 70;
 
-	bool is_in_voxel(float x, float y, float z);
+	// Amount of sampling points for cube marching per unit of length
+	static const int PRECISION = 1;
+
+	// Isovalue for marching cubes
+	static const float ISOVALUE;
+
+	// Amount of sampling points per chunk horizontally/vertically
+	static const int XY_SAMPLES = PRECISION * XY_LENGTH;
+	static const int Z_SAMPLES = PRECISION * Z_LENGTH;
+
+	// Inverse of precision: units of length per sampling point
+	static const float SCALE;
 };
 

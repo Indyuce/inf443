@@ -13,25 +13,6 @@ using cgp::vec3;
 using cgp::numarray;
 using cgp::timer_basic;
 
-// Variables associated to the GUI (buttons, etc)
-struct gui_parameters {
-	bool display_frame = false;
-	bool display_wireframe = false;
-
-	vec3 light_color = { 1,1,1 };
-	vec3 light_position = { -2, 2, 2 };
-
-	float ambiant = 0.3f;
-	float diffuse = 0.8f;
-	float specular = 0.03f;
-	float direct = 0.03f;
-
-	int directExp = 2;
-	int specularExp = 2;
-	float fog_distance = 50.0f;
-	float attenuation_distance = 70.0f;
-};
-
 // The structure of the custom scene
 struct scene_structure : cgp::scene_inputs_generic {
 
@@ -46,13 +27,20 @@ struct scene_structure : cgp::scene_inputs_generic {
 
 	environment_structure environment;   // Standard environment controler
 	input_devices inputs;                // Storage for inputs status (mouse, keyboard, window dimension)
-	gui_parameters gui;                  // Standard GUI element storage
+	opengl_shader_structure shader_custom;
 	
 	// ****************************** //
 	// Elements and shapes of the scene
 	// ****************************** //
 
 	timer_basic timer;
+
+	/// <summary>
+	/// Sphere displayed all around the camera to make sure shaders are applied
+	/// in all directions. This is particularily important for direct light source
+	/// illumination shaders.
+	/// </summary>
+	mesh_drawable camera_sphere;
 
 	// Terrain
 	terrain terrain_gen;
@@ -86,6 +74,8 @@ struct scene_structure : cgp::scene_inputs_generic {
 	// ****************************** //
 
 	void initialize();
+
+	vec3 get_camera_position();
 
 	// Standard initialization to be called before the animation loop
 	void display_frame(); // The frame display to be called within the animation loop

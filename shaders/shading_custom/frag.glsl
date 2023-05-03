@@ -32,11 +32,21 @@ uniform float direct;
 uniform int directExp;
 
 uniform vec3 light_color;
-uniform vec3 light_position;
+uniform vec3 light_direction;
 
 uniform vec3 fog_color;
 uniform float fog_distance;
 uniform float attenuation_distance;
+
+float near = 0.1; 
+float far  = 1000.0;
+float th   = 300.0f;
+  
+float LinearizeDepth(float depth) 
+{
+    float z = depth * 2.0 - 1.0; // back to NDC 
+    return (2.0 * near * far) / (far + near - z * (far - near));	
+}
 
 void main()
 {
@@ -48,9 +58,8 @@ void main()
     vec3 camera_position = -O * last_col;
 
     // Useful vectors
-    vec3 L = normalize(light_position - fragment.position);
     vec3 N = normalize(fragment.normal);
-    vec3 R = reflect(-L, N);
+    vec3 R = reflect(light_direction, N);
     vec3 C = camera_position - fragment.position;
     vec3 Cn = normalize(C);
     
@@ -61,13 +70,13 @@ void main()
 	//	N = -N;
 	//}
 
-    // Color Attenuation
-    float dl = length(light_position - fragment.position);
-    float attenuation_coef = 1 - min(dl / attenuation_distance, 1);
-    vec3 eff_light_color = attenuation_coef * light_color;
+    // Color Attenuation TODO once water is implemented
+    //float dl = length(camera_position - fragment.position);
+    //float attenuation_coef = 1 - min(dl / attenuation_distance, 1);
+    vec3 eff_light_color = light_color; //attenuation_coef * light_color;
 
     // Diffuse
-    float diffuse_value = max(dot(N, L), 0.0);
+    float diffuse_value = max(dot(N, -light_direction), 0.0);
     float diffuse_magnitude = diffuse * diffuse_value;
 
     // Specular
@@ -76,10 +85,13 @@ void main()
     float specular_magnitude = specular * specular_value;
     
     // Direct
-    vec3 D = normalize(camera_position - light_position);
-    float direct_value = max(dot(Cn, D), 0); 
-    direct_value = pow(direct_value, directExp);
-    float direct_magnitude = direct * direct_value;
+    float depth = LinearizeDepth(gl_FragCoord.z); // divide by far for demonstration
+    float direct_magnitude = 0;
+    if (depth > th) {
+        float direct_value = max(dot(Cn, light_direction), 0); 
+        direct_value = pow(direct_value, directExp);
+        direct_magnitude = direct * direct_value;
+    }
 
     // Calculate color
     current_color = ((ambiant + diffuse_magnitude) * material.color + specular_magnitude + direct_magnitude) * eff_light_color;

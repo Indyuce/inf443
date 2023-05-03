@@ -30,8 +30,6 @@ int main(int, char* argv[])
 {
 	std::cout << "Run " << argv[0] << std::endl;
 
-	
-
 	// ************************ //
 	//     INITIALISATION
 	// ************************ //

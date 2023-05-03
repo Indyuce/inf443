@@ -34,8 +34,13 @@ void scene_structure::initialize()
 	// Create the shapes seen in the 3D scene
 	// ********************************************** //
 
+	// Load the custom shader
+	shader_custom.load(
+		project::path + "shaders/shading_custom/vert.glsl",
+		project::path + "shaders/shading_custom/frag.glsl");
+
     // Terrain
-	drawable_chunk = terrain_gen.generate_chunk_data(0, 0);
+	drawable_chunk = terrain_gen.generate_chunk_data(0, 0, shader_custom);
 
 	initialize_models();
 	std::random_device rd;
@@ -75,17 +80,38 @@ void scene_structure::initialize()
 	// Remove warnings for unset uniforms
 	cgp_warning::max_warning = 0;
 
-	// Load the custom shader
-	cgp::opengl_shader_structure shader_custom;
-	shader_custom.load(
-		project::path + "shaders/shading_custom/vert.glsl",
-		project::path + "shaders/shading_custom/frag.glsl");
-
-	// Affect the loaded shader to the mesh_drawable
-	drawable_chunk->drawable.shader = shader_custom;
+	// Camera sphere
+	camera_sphere.initialize_data_on_gpu(mesh_primitive_sphere(300));
+	camera_sphere.shader = shader_custom;
+	camera_sphere.material.color = { 0,0,0 };
 }
 
-float const MOVE_SPEED = .1f;
+float const MOVE_SPEED = .5f;
+
+/// <summary>
+/// Angle of light relative to horizon. Light is not modeled by a position
+/// but rather by a direction as light from the sun is supposed to be infinitely
+/// far away. This means all light rays have approximately the same direction.
+/// Shaders directly use light direction instead of position.
+/// </summary>
+float const LIGHT_ANGLE = 60;
+
+vec3 scene_structure::get_camera_position() {
+	const mat3 O = transpose(mat3(environment.camera_view)); // get the orientation matrix
+	const vec4 last_col_4 = environment.camera_view * vec4(0.0, 0.0, 0.0, 1.0); // get the last column
+	const vec3 last_col = vec3(last_col_4.x, last_col_4.y, last_col_4.z);
+	return -O * last_col;
+}
+
+vec3 compute_direction(const float& azimut, const float& polar) {
+	const float azimut_rad = azimut * Pi / 180.0f;
+	const float polar_rad = polar * Pi / 180.0f;
+	return vec3(cos(azimut_rad) * sin(polar_rad), sin(azimut_rad) * sin(polar_rad), cos(polar_rad));
+}
+
+vec3 compute_direction(vec2& dir) {
+	return compute_direction(dir.x, dir.y);
+}
 
 // This function is called permanently at every new frame
 // Note that you should avoid having costly computation and large allocation defined there. This function is mostly used to call the draw() functions on pre-existing data.
@@ -93,10 +119,6 @@ void scene_structure::display_frame()
 {
 	// Increment time
 	t += dt;
-	
-	// Set the light to the current position of the camera
-	environment.light = camera_control.camera_model.position();
-	environment.uniform_generic.uniform_float["time"] = t;
 
 	// Draw fishes
 	for (int i = 0;i < fish_manager.fishes.size();i++) {
@@ -130,45 +152,55 @@ void scene_structure::display_frame()
 
 	if (camera_control.inputs->keyboard.is_pressed(GLFW_KEY_SPACE))
 		camera_control.camera_model.manipulator_translate_in_plane(vec2(0, -MOVE_SPEED));
-	else if (camera_control.inputs->keyboard.ctrl)
+	else if (camera_control.inputs->keyboard.shift)
 		camera_control.camera_model.manipulator_translate_in_plane(vec2(0, MOVE_SPEED));
 
 	// Send uniforms
-	environment.uniform_generic.uniform_float["ambiant"] = gui.ambiant;
-	environment.uniform_generic.uniform_float["diffuse"] = gui.diffuse;
-	environment.uniform_generic.uniform_float["specular"] = gui.specular;
-	environment.uniform_generic.uniform_float["direct"] = gui.direct;
-	environment.uniform_generic.uniform_int["directExp"] = gui.directExp;
-	environment.uniform_generic.uniform_vec3["light_color"] = gui.light_color;
+	environment.uniform_generic.uniform_float["ambiant"] = environment.ambiant;
+	environment.uniform_generic.uniform_float["diffuse"] = environment.diffuse;
+	environment.uniform_generic.uniform_float["specular"] = environment.specular;
+	environment.uniform_generic.uniform_float["direct"] = environment.direct;
+	environment.uniform_generic.uniform_int["directExp"] = environment.directExp;
+	environment.uniform_generic.uniform_vec3["light_color"] = environment.light_color;
 
-	environment.uniform_generic.uniform_vec3["light_position"] = gui.light_position;
-	environment.uniform_generic.uniform_int["specularExp"] = gui.specularExp;
+	environment.uniform_generic.uniform_vec3["light_direction"] = compute_direction(environment.light_direction);
+	environment.uniform_generic.uniform_int["specularExp"] = environment.specularExp;
 	environment.uniform_generic.uniform_vec3["fog_color"] = environment.background_color;
-	environment.uniform_generic.uniform_float["fog_distance"] = gui.fog_distance;
-	environment.uniform_generic.uniform_float["attenuation_distance"] = gui.attenuation_distance;
+	environment.uniform_generic.uniform_float["fog_distance"] = environment.fog_distance;
+	environment.uniform_generic.uniform_float["attenuation_distance"] = environment.attenuation_distance;
+	environment.uniform_generic.uniform_float["time"] = t;
 
 	// the general syntax to display a mesh is:
 	//   draw(mesh_drawableName, environment);
 	// Note: scene is used to set the uniform parameters associated to the camera, light, etc. to the shader
     draw(drawable_chunk->drawable, environment);
+
+	// Draw camera sphere
+	camera_sphere.model.translation = get_camera_position();
+	draw(camera_sphere, environment);
 }
 
 void scene_structure::display_gui()
 {
-	ImGui::ColorEdit3("Light color", &gui.light_color[0]);
-	ImGui::SliderFloat3("Light position", &gui.light_position[0], -3.0f, 3.0f);
+	ImGui::ColorEdit3("Light Color", &environment.light_color[0]);
+	ImGui::SliderFloat2("Light Azimut/Polar", &environment.light_direction[0], -180, 180);
 
-	ImGui::SliderFloat("Ambiant", &gui.ambiant, 0.0f, 1.0f);
-	ImGui::SliderFloat("Diffuse", &gui.diffuse, 0.0f, 1.0f);
-	ImGui::SliderFloat("Specular", &gui.specular, 0.0f, 1.0f);
-	ImGui::SliderInt("Specular Exp", &gui.specularExp, 1, 255);
+	ImGui::SliderFloat("Ambiant", &environment.ambiant, 0.0f, 1.0f);
+	ImGui::SliderFloat("Diffuse", &environment.diffuse, 0.0f, 1.0f);
+	ImGui::SliderFloat("Specular", &environment.specular, 0.0f, 1.0f);
+	ImGui::SliderInt("Specular Exp", &environment.specularExp, 1, 255);
 
-	ImGui::SliderFloat("Direct", &gui.direct, 0.0f, 10.0f);
-	ImGui::SliderInt("Direct Exp", &gui.directExp, 1, 255);
+	ImGui::SliderFloat("offset", &environment.offset, -20.0f, 0.0f);
+	ImGui::SliderFloat("lin mul", &environment.hmul, 0.0f, 10.0f);
+	ImGui::SliderFloat("tot mul", &environment.mult, 1.0f, 20.0f);
+
+	//ImGui::SliderFloat("Direct", &environment.direct, 0.0f, 100.0f);
+	//ImGui::SliderInt("Direct Exp", &environment.directExp, 1, 1000);
 
 	ImGui::ColorEdit3("Fog Color", &environment.background_color[0]);
-	ImGui::SliderFloat("Fog Distance", &gui.fog_distance, 100.0f, 1000.0f);
-	ImGui::SliderFloat("Attenuation Distance", &gui.attenuation_distance, 100.0f, 1000.0f);
+	ImGui::SliderFloat("Fog Distance", &environment.fog_distance, 100.0f, 1000.0f);
+	ImGui::SliderFloat("Attenuation Distance", &environment.attenuation_distance, 100.0f, 1000.0f);
+
 }
 
 void scene_structure::initialize_models() {
