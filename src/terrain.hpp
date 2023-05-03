@@ -34,6 +34,7 @@ struct terrain
 
 	float potential(spatial_domain_grid_3D const& domain, vec3 const& pos);
 
+	//Make sur to change it in animation.hpp aso !!
 	static const int XY_LENGTH = 100;
 	static const int Z_LENGTH = 70;
 

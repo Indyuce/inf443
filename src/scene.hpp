@@ -49,12 +49,6 @@ struct scene_structure : cgp::scene_inputs_generic {
 	/**
 	 *  Fishes
 	*/
-	float boid_speed;
-	float boid_radius;
-	float separation_coef;
-	float alignement_coef;
-	float cohesion_coef;
-	float change_color_coef;
 	int num_fishes;
 	float dt;
 	float t;

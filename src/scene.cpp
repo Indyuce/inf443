@@ -7,14 +7,7 @@
 using namespace cgp;
 
 scene_structure::scene_structure() {
-	boid_speed = 0.01;
-	boid_radius = 1;
-	separation_coef = 0.01;
-	alignement_coef = 0.01;
-	cohesion_coef = 0.4;
-
-	change_color_coef = 0.5;
-	num_fishes = 0;
+	num_fishes = 100;
 	dt = 0.05;
 	t = 0;
 }
@@ -42,6 +35,7 @@ void scene_structure::initialize()
     // Terrain
 	drawable_chunk = terrain_gen.generate_chunk_data(0, 0, shader_custom);
 
+
 	initialize_models();
 	std::random_device rd;
 	std::mt19937 gen(rd());
@@ -51,9 +45,11 @@ void scene_structure::initialize()
 	
 	fish fish;
 	for (int i = 0;i < num_fishes;i++) {
-		fish.direction = { 1,0,0 };
-		fish.position = { 5 * distrib(gen), 5 * distrib(gen), 5 * distrib(gen) };
-		fish.speed = boid_speed;
+		fish.direction = { 2*distrib(gen)-1,2*distrib(gen)-1,2*distrib(gen)-1 };
+		do{
+			fish.position = { XY_LENGTH * (distrib(gen) - 0.5), XY_LENGTH * (distrib(gen) - 0.5), Z_LENGTH * (distrib(gen) - 0.5) };
+		} while (drawable_chunk->grid(fish.position.x+XY_LENGTH/2, fish.position.y + XY_LENGTH / 2, fish.position.z + Z_LENGTH / 2) < -1);
+		fish.speed = fish_manager.fish_speed;
 		fish.frequency = 4 + 2 * distrib(gen);
 		int random = std::rand()%5;
 		fish.modelId = random;
@@ -119,14 +115,16 @@ void scene_structure::display_frame()
 {
 	// Increment time
 	t += dt;
-
+	fish_manager.refresh(drawable_chunk->grid);
 	// Draw fishes
 	for (int i = 0;i < fish_manager.fishes.size();i++) {
 		fish fish = fish_manager.fishes[i];
+		
 		rotation_transform horiz_transformation = cgp::rotation_transform::from_axis_angle({ 0,0,1 }, 3.14159 / 2);
 		rotation_transform X_transformation = cgp::rotation_transform::from_axis_angle({ 1,0,0 }, 3.14159 / 2);
 		//boid.model.rotation = cgp::rotation_transform::from_vector_transform({ 0,0,1 }, boid_direction[i])*;
-		fish.model.model.rotation = cgp::rotation_transform::from_axis_angle(fish.direction, 3.14159 / 2) * cgp::rotation_transform::from_vector_transform({ 0,0,1 }, fish.direction);
+		//fish.model.model.rotation = cgp::rotation_transform::from_axis_angle(fish.direction, 3.14159 / 2) * cgp::rotation_transform::from_vector_transform({ 0,0,1 }, fish.direction);
+		fish.model.model.rotation = cgp::rotation_transform::from_vector_transform({ 0,0,1 }, fish.direction);
 		fish.model.model.translation = fish.position;
 		fish.model.material.color = { 1,1,1 };
 		//boid.material.color = boid_color[i];
@@ -245,11 +243,11 @@ void scene_structure::initialize_models() {
 		project::path + "shaders/fish4/frag.glsl");
 	fish4.shader = fish4_shader;
 
-	fish0.model.scaling = 0.05f;
-	fish1.model.scaling = 0.05f;
-	fish2.model.scaling = 0.1f;
-	fish3.model.scaling = 0.05f;
-	fish4.model.scaling = 0.4f;
+	fish0.model.scaling = 0.5f;
+	fish1.model.scaling = 0.5f;
+	fish2.model.scaling = 1.0f;
+	fish3.model.scaling = 0.5f;
+	fish4.model.scaling = 4.0f;
 	
 	//boid.model.scaling = 0.1f;  //0.04F
 	jellyfish.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/jellyfish/Jellyfish_001.obj"));
