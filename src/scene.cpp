@@ -7,7 +7,7 @@
 using namespace cgp;
 
 scene_structure::scene_structure() {
-	num_fishes = 100;
+	num_fishes = 0;
 	dt = 0.05;
 	t = 0;
 }
@@ -24,6 +24,12 @@ void scene_structure::initialize()
 	//   look_at(camera_position, targeted_point, up_direction)
 	camera_control.camera_model.distance_to_center = 0.0f;
 
+	// Initialization for the Implicit Surface
+	// ***************************************** //
+	implicit_surface.set_domain(gui.domain.samples, gui.domain.length);
+	implicit_surface.update_field(field_function, gui.isovalue);
+
+
 	// Create the shapes seen in the 3D scene
 	// ********************************************** //
 
@@ -33,7 +39,7 @@ void scene_structure::initialize()
 		project::path + "shaders/shading_custom/frag.glsl");
 
     // Terrain
-	drawable_chunk = terrain_gen.generate_chunk_data(0, 0, shader_custom);
+	//drawable_chunk = terrain_gen.generate_chunk_data(0, 0, shader_custom);
 
 
 	initialize_models();
@@ -115,7 +121,8 @@ void scene_structure::display_frame()
 {
 	// Increment time
 	t += dt;
-	fish_manager.refresh(drawable_chunk->grid);
+	if (num_fishes > 0)
+		fish_manager.refresh(drawable_chunk->grid);
 	// Draw fishes
 	for (int i = 0;i < fish_manager.fishes.size();i++) {
 		fish fish = fish_manager.fishes[i];
@@ -171,34 +178,44 @@ void scene_structure::display_frame()
 	// the general syntax to display a mesh is:
 	//   draw(mesh_drawableName, environment);
 	// Note: scene is used to set the uniform parameters associated to the camera, light, etc. to the shader
-    draw(drawable_chunk->drawable, environment);
+	//draw(drawable_chunk->drawable, environment);
 
 	// Draw camera sphere
 	camera_sphere.model.translation = get_camera_position();
-	draw(camera_sphere, environment);
+	//draw(camera_sphere, environment);
+
+	// draw implicit surface
+	draw(implicit_surface.drawable_param.domain_box, environment);
+	draw(implicit_surface.drawable_param.shape, environment);
 }
 
 void scene_structure::display_gui()
 {
-	ImGui::ColorEdit3("Light Color", &environment.light_color[0]);
-	ImGui::SliderFloat2("Light Azimut/Polar", &environment.light_direction[0], -180, 180);
 
-	ImGui::SliderFloat("Ambiant", &environment.ambiant, 0.0f, 1.0f);
-	ImGui::SliderFloat("Diffuse", &environment.diffuse, 0.0f, 1.0f);
-	ImGui::SliderFloat("Specular", &environment.specular, 0.0f, 1.0f);
-	ImGui::SliderInt("Specular Exp", &environment.specularExp, 1, 255);
+	// Handle the gui values and the updates using the helper methods (*)
+	implicit_surface.gui_update(gui, field_function);
 
-	ImGui::SliderFloat("offset", &environment.offset, -20.0f, 0.0f);
-	ImGui::SliderFloat("lin mul", &environment.hmul, 0.0f, 10.0f);
-	ImGui::SliderFloat("tot mul", &environment.mult, 1.0f, 20.0f);
+	if (ImGui::CollapsingHeader("Environment")) {
 
-	//ImGui::SliderFloat("Direct", &environment.direct, 0.0f, 100.0f);
-	//ImGui::SliderInt("Direct Exp", &environment.directExp, 1, 1000);
+		ImGui::ColorEdit3("Light Color", &environment.light_color[0]);
+		ImGui::SliderFloat2("Light Azimut/Polar", &environment.light_direction[0], -180, 180);
 
-	ImGui::ColorEdit3("Fog Color", &environment.background_color[0]);
-	ImGui::SliderFloat("Fog Distance", &environment.fog_distance, 100.0f, 1000.0f);
-	ImGui::SliderFloat("Attenuation Distance", &environment.attenuation_distance, 100.0f, 1000.0f);
+		ImGui::SliderFloat("Ambiant", &environment.ambiant, 0.0f, 1.0f);
+		ImGui::SliderFloat("Diffuse", &environment.diffuse, 0.0f, 1.0f);
+		ImGui::SliderFloat("Specular", &environment.specular, 0.0f, 1.0f);
+		ImGui::SliderInt("Specular Exp", &environment.specularExp, 1, 255);
 
+		ImGui::SliderFloat("offset", &environment.offset, -20.0f, 0.0f);
+		ImGui::SliderFloat("lin mul", &environment.hmul, 0.0f, 10.0f);
+		ImGui::SliderFloat("tot mul", &environment.mult, 1.0f, 20.0f);
+
+		//ImGui::SliderFloat("Direct", &environment.direct, 0.0f, 100.0f);
+		//ImGui::SliderInt("Direct Exp", &environment.directExp, 1, 1000);
+
+		ImGui::ColorEdit3("Fog Color", &environment.background_color[0]);
+		ImGui::SliderFloat("Fog Distance", &environment.fog_distance, 100.0f, 1000.0f);
+		ImGui::SliderFloat("Attenuation Distance", &environment.attenuation_distance, 100.0f, 1000.0f);
+	}
 }
 
 void scene_structure::initialize_models() {

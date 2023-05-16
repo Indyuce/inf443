@@ -9,10 +9,9 @@ using namespace cgp;
 struct environment_structure : environment_generic_structure
 {
 
-
 	float offset = -9.0f;
 	float hmul = 1.0f;
-		float mult = 7.0f;
+	float mult = 7.0f;
 
 	// Light parameters
 	vec3 light_color = { .988f, .898f, .439f };
