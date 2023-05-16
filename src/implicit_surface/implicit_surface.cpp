@@ -20,15 +20,22 @@ static void update_normals(std::vector<vec3>& normals, int number_of_vertex, gri
 	}
 }
 
+static void update_colors(std::vector<vec3>& color, int number_of_vertex, std::vector<vec3>& position, field_function_structure const& field_function) {
+	for (int k = 0; k < number_of_vertex; ++k) {
+		color[k] = field_function.color_at(position[k]);
+	}
+}
+
 void implicit_surface_structure::set_shader(opengl_shader_structure* p_shader_) {
 	p_shader = p_shader_;
 }
 
-void implicit_surface_structure::update_marching_cube(float isovalue)
+void implicit_surface_structure::update_marching_cube(field_function_structure const& field_function, float isovalue)
 {
 	// Variable shortcut
 	std::vector<vec3>& position = data_param.position;
 	std::vector<vec3>& normal = data_param.normal;
+	std::vector<vec3>& color = data_param.color;
 	size_t& number_of_vertex = data_param.number_of_vertex;
 	spatial_domain_grid_3D const& domain = field_param.domain;
 	std::vector<cgp::marching_cube_relative_coordinates> relative_coord = data_param.relative;
@@ -42,26 +49,29 @@ void implicit_surface_structure::update_marching_cube(float isovalue)
 	number_of_vertex = marching_cube(position, field.data.data, domain, isovalue, &relative_coord);
 
 	// Resize the vector of normals if needed
-	if (normal.size() < position.size())
+	if (normal.size() < position.size()) {
 		normal.resize(position.size());
+		color.resize(position.size());
+	}
 
 	update_normals(normal, number_of_vertex, gradient, relative_coord);
+	update_colors(color, number_of_vertex, position, field_function);
 
 	// Update the display of the mesh
 	if (position.size() > previous_size) {
 		// If there is more position than allocated - perform a full clear and reallocation from scratch
 		drawable_param.shape.clear();
-		drawable_param.shape.initialize_data_on_gpu(position, normal);
+		drawable_param.shape.initialize_data_on_gpu(position, normal, color);
 	}
 	else {
 		// Otherwise simply update the new relevant values re-using the allocated buffers
 		drawable_param.shape.vbo_position.update(position, number_of_vertex);
 		drawable_param.shape.vbo_normal.update(normal, number_of_vertex);
+		drawable_param.shape.vbo_color.update(color, number_of_vertex);
 		drawable_param.shape.vertex_number = number_of_vertex;
 	}
 
 	drawable_param.shape.shader = *p_shader;
-	drawable_param.shape.material.color = { 0.91f, 0.6f, 0.17f };
 	// TODO volumetric color
 }
 
@@ -80,7 +90,7 @@ void implicit_surface_structure::update_field(field_function_structure const& fi
 	gradient = compute_gradient(field);
 
 	// Recompute the marching cube
-	update_marching_cube(isovalue);
+	update_marching_cube(field_function, isovalue);
 
 	// Reset the domain visualization (lightweight - can be cleared at each call)
 	drawable_param.domain_box.clear();
@@ -131,7 +141,7 @@ void implicit_surface_structure::gui_update(environment_structure& gui, field_fu
 	display_gui_implicit_surface(is_update_field, is_update_marching_cube, is_save_obj, gui, field_function);
 
 	if (is_update_marching_cube) 
-		update_marching_cube(gui.isovalue);
+		update_marching_cube(field_function, gui.isovalue);
 	if (is_update_field) {
 		set_domain(gui.domain.samples, gui.domain.length);
 		update_field(field_function, gui.isovalue);

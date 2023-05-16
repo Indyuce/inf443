@@ -21,6 +21,7 @@ struct implicit_surface_data {
 	size_t number_of_vertex;              // The valid number of vertex of the surface
 	std::vector<cgp::vec3> position;      // Positions of the mesh
 	std::vector<cgp::vec3> normal;        // Normals of the mesh
+	std::vector<cgp::vec3> color;      // Colors of the mesh (ADDED)
 	std::vector<cgp::marching_cube_relative_coordinates> relative; // Relative coordinates of the vertices expressed as an edge in the discrete grid 
 };
 
@@ -48,7 +49,7 @@ struct implicit_surface_structure
 	void update_field(field_function_structure const& field_function, float isovalue);
 
 	//   Recompute only the marching cube for a different isovalue (while minimize re-allocations)
-	void update_marching_cube(float isovalue);
+	void update_marching_cube(field_function_structure const& field_function, float isovalue);
 
 	//   Helper function to quickly set the domain (number of samples, and dimensions)
 	void set_domain(int samples, cgp::vec3 const& length);

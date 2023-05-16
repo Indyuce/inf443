@@ -61,7 +61,10 @@ float mod(float x, float y) {
 }
 
 cgp::vec3 field_function_structure::color_at(cgp::vec3 const& pos) const {
-    return { 0.91f, 0.6f, 0.17f };
+    //return { 0.91f, 0.6f, 0.17f };
+
+    const float p = mod(pos.x, 1);
+    return vec3(p, p, p);
 }
 
 float field_function_structure::operator()(cgp::vec3 const& pos) const
