@@ -24,24 +24,24 @@ void scene_structure::initialize()
 	//   look_at(camera_position, targeted_point, up_direction)
 	camera_control.camera_model.distance_to_center = 0.0f;
 
-	// Initialization for the Implicit Surface
+	// Load terrain and water shader
 	// ***************************************** //
-	implicit_surface.set_domain(gui.domain.samples, gui.domain.length);
-	implicit_surface.update_field(field_function, gui.isovalue);
-
-
-	// Create the shapes seen in the 3D scene
-	// ********************************************** //
-
-	// Load the custom shader
-	shader_custom.load(
+	environment.shader.load(
 		project::path + "shaders/shading_custom/vert.glsl",
 		project::path + "shaders/shading_custom/frag.glsl");
 
+	// Initialization for the Terrain (Implicit Surface)
+	// ***************************************** //
+	implicit_surface.set_shader(&environment.shader);
+	implicit_surface.set_domain(environment.domain.samples, environment.domain.length);
+	implicit_surface.update_field(field_function, environment.isovalue);
+
     // Terrain
+	// ***************************************** //
 	//drawable_chunk = terrain_gen.generate_chunk_data(0, 0, shader_custom);
 
-
+	// Animation and models
+	// ***************************************** //
 	initialize_models();
 	std::random_device rd;
 	std::mt19937 gen(rd());
@@ -83,9 +83,10 @@ void scene_structure::initialize()
 	cgp_warning::max_warning = 0;
 
 	// Camera sphere
+	// ***************************************** //
 	camera_sphere.initialize_data_on_gpu(mesh_primitive_sphere(300));
-	camera_sphere.shader = shader_custom;
-	camera_sphere.material.color = { 0,0,0 };
+	camera_sphere.shader = environment.shader;
+	camera_sphere.material.color = { 1, 1, 1 };
 }
 
 float const MOVE_SPEED = .5f;
@@ -165,14 +166,17 @@ void scene_structure::display_frame()
 	environment.uniform_generic.uniform_float["diffuse"] = environment.diffuse;
 	environment.uniform_generic.uniform_float["specular"] = environment.specular;
 	environment.uniform_generic.uniform_float["direct"] = environment.direct;
-	environment.uniform_generic.uniform_int["directExp"] = environment.directExp;
+	environment.uniform_generic.uniform_int["directExp"] = environment.direct_exp;
 	environment.uniform_generic.uniform_vec3["light_color"] = environment.light_color;
 
+	environment.uniform_generic.uniform_float["flashlight"] = environment.flashlight;
+	environment.uniform_generic.uniform_int["flashlight_exp"] = environment.flashlight_exp;
+
 	environment.uniform_generic.uniform_vec3["light_direction"] = compute_direction(environment.light_direction);
-	environment.uniform_generic.uniform_int["specularExp"] = environment.specularExp;
+	environment.uniform_generic.uniform_int["specularExp"] = environment.specular_exp;
 	environment.uniform_generic.uniform_vec3["fog_color"] = environment.background_color;
 	environment.uniform_generic.uniform_float["fog_distance"] = environment.fog_distance;
-	environment.uniform_generic.uniform_float["attenuation_distance"] = environment.attenuation_distance;
+	// environment.uniform_generic.uniform_float["attenuation_distance"] = environment.attenuation_distance;
 	environment.uniform_generic.uniform_float["time"] = t;
 
 	// the general syntax to display a mesh is:
@@ -193,7 +197,7 @@ void scene_structure::display_gui()
 {
 
 	// Handle the gui values and the updates using the helper methods (*)
-	implicit_surface.gui_update(gui, field_function);
+	implicit_surface.gui_update(environment, field_function);
 
 	if (ImGui::CollapsingHeader("Environment")) {
 
@@ -203,18 +207,19 @@ void scene_structure::display_gui()
 		ImGui::SliderFloat("Ambiant", &environment.ambiant, 0.0f, 1.0f);
 		ImGui::SliderFloat("Diffuse", &environment.diffuse, 0.0f, 1.0f);
 		ImGui::SliderFloat("Specular", &environment.specular, 0.0f, 1.0f);
-		ImGui::SliderInt("Specular Exp", &environment.specularExp, 1, 255);
+		ImGui::SliderInt("Specular Exp", &environment.specular_exp, 1, 255);
 
-		ImGui::SliderFloat("offset", &environment.offset, -20.0f, 0.0f);
-		ImGui::SliderFloat("lin mul", &environment.hmul, 0.0f, 10.0f);
-		ImGui::SliderFloat("tot mul", &environment.mult, 1.0f, 20.0f);
+		ImGui::SliderFloat("Flashlight", &environment.flashlight, 0.0f, 10.0f);
+		ImGui::SliderInt("Flashlight Exp", &environment.flashlight_exp, 1, 255);
+		// ImGui::SliderFloat("Flashlight Dist", &environment.flashlight_dist, 1.0f, 100.0f);
 
-		//ImGui::SliderFloat("Direct", &environment.direct, 0.0f, 100.0f);
-		//ImGui::SliderInt("Direct Exp", &environment.directExp, 1, 1000);
+		// Now Hard coded
+		// ImGui::SliderFloat("Direct", &environment.direct, 0.0f, 100.0f);
+		// ImGui::SliderInt("Direct Exp", &environment.directExp, 1, 1000);
 
 		ImGui::ColorEdit3("Fog Color", &environment.background_color[0]);
 		ImGui::SliderFloat("Fog Distance", &environment.fog_distance, 100.0f, 1000.0f);
-		ImGui::SliderFloat("Attenuation Distance", &environment.attenuation_distance, 100.0f, 1000.0f);
+		// ImGui::SliderFloat("Attenuation Distance", &environment.attenuation_distance, 100.0f, 1000.0f);
 	}
 }
 
@@ -284,7 +289,6 @@ void scene_structure::initialize_models() {
 		project::path + "shaders/alga/frag.glsl");
 	alga.shader = alga_shader;
 }
-
 
 void scene_structure::mouse_move_event()
 {

@@ -20,6 +20,10 @@ static void update_normals(std::vector<vec3>& normals, int number_of_vertex, gri
 	}
 }
 
+void implicit_surface_structure::set_shader(opengl_shader_structure* p_shader_) {
+	p_shader = p_shader_;
+}
+
 void implicit_surface_structure::update_marching_cube(float isovalue)
 {
 	// Variable shortcut
@@ -56,8 +60,10 @@ void implicit_surface_structure::update_marching_cube(float isovalue)
 		drawable_param.shape.vertex_number = number_of_vertex;
 	}
 
+	drawable_param.shape.shader = *p_shader;
+	drawable_param.shape.material.color = { 0.91f, 0.6f, 0.17f };
+	// TODO volumetric color
 }
-
 
 
 void implicit_surface_structure::update_field(field_function_structure const& field_function, float isovalue)
@@ -86,9 +92,37 @@ void implicit_surface_structure::set_domain(int samples, cgp::vec3 const& length
 	field_param.domain = spatial_domain_grid_3D::from_center_length({ 0,0,0 }, length, samples * int3{ 1,1,1 });
 }
 
+void implicit_surface_structure::display_gui_implicit_surface(bool& is_update_field, bool& is_update_marching_cube, bool& is_save_obj, environment_structure& gui, field_function_structure& field_function)
+{
+	if (ImGui::CollapsingHeader("Marching Cube"))
+	{
+		is_update_field |= ImGui::SliderInt("Samples", &gui.domain.samples, 8, 100);
 
+		//is_update_field |= ImGui::SliderFloat("Lx", &gui.domain.length.x, 0.5f, 10.0f);
+		//is_update_field |= ImGui::SliderFloat("Ly", &gui.domain.length.y, 0.5f, 10.0f);
+		//is_update_field |= ImGui::SliderFloat("Lz", &gui.domain.length.z, 0.5f, 10.0f);
 
-void implicit_surface_structure::gui_update(gui_parameters& gui, field_function_structure& field_function)
+		ImGui::Spacing();
+		is_update_marching_cube |= ImGui::SliderFloat("Isovalue", &gui.isovalue, 0.0f, 10.0f);
+
+		ImGui::Spacing();
+		is_save_obj = ImGui::Button("Export mesh as obj");
+	}
+
+	if (ImGui::CollapsingHeader("Field Function"))
+	{
+		// ImGui::Text("Floor");
+		//is_update_field |= ImGui::SliderFloat("Floor Att Dist", &field_function.floor_att_dist, 3.0f, 30.0f);
+		is_update_field |= ImGui::SliderFloat("Persistency", &field_function.cave_perlin.persistency, 0.1f, .9f);
+		is_update_field |= ImGui::SliderFloat("Frequency Gain", &field_function.cave_perlin.frequency_gain, 0.1f, 10.0f);
+		is_update_field |= ImGui::SliderInt("Octave", &field_function.cave_perlin.octave, 1, 5);
+		is_update_field |= ImGui::SliderFloat("Scale", &field_function.cave_perlin.scale, 0.1f, 2.5f);
+		is_update_field |= ImGui::SliderFloat("Mult", &field_function.cave_perlin.multiplier, 5.0f, 12.0f);
+		is_update_field |= ImGui::SliderFloat("Offset", &field_function.cave_perlin.offset, 0.0f, 10.0f);
+	}
+}
+
+void implicit_surface_structure::gui_update(environment_structure& gui, field_function_structure& field_function)
 {
 	bool is_update_marching_cube = false;
 	bool is_update_field = false;
@@ -108,10 +142,7 @@ void implicit_surface_structure::gui_update(gui_parameters& gui, field_function_
 		data_param.normal.resize(data_param.number_of_vertex);
 		save_file_obj("mesh.obj", data_param.position, data_param.normal);
 	}
-		
 }
-
-
 
 grid_3D<float> compute_discrete_scalar_field(spatial_domain_grid_3D const& domain, field_function_structure const& func)
 {

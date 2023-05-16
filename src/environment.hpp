@@ -8,25 +8,42 @@ using namespace cgp;
 
 struct environment_structure : environment_generic_structure
 {
+	struct { // Elements of the domain
+		int size_coef = 1;
+		int samples = 100 * size_coef;
+		cgp::vec3 length = { 200 * size_coef, 200 * size_coef, 50 };
+	} domain;
 
-	float offset = -9.0f;
-	float hmul = 1.0f;
-	float mult = 7.0f;
+	opengl_shader_structure shader;
+
+	// Isovalue used during the marching cube
+	float isovalue = 0.4f;
 
 	// Light parameters
+	vec3 player_light = { 1.0f, 1.0f, 1.0f };
 	vec3 light_color = { .988f, .898f, .439f };
 	vec2 light_direction = { 0.0f, 90.0f };
+
+	// Basic illumination
 	float ambiant = 0.3f;
 	float diffuse = 0.8f;
 	float specular = 0.03f;
+	int specular_exp = 2;
+
+	// Direct illumination
 	float direct = 2.35f;
-	int directExp = 410;
-	int specularExp = 2;
-	float fog_distance = 1000.0f;
-	float attenuation_distance = 70.0f;
+	int direct_exp = 410;
+
+	// Player Flashlight
+	float flashlight = 2.41f;
+	int flashlight_exp = 33;
+	float flashlight_dist = 10.0f;
+
+	float fog_distance = 150.0f;
+	// float attenuation_distance = 100.0f;
 
 	// Color of the background of the scene
-	vec3 background_color = { 1,1,1 }; // Used in the main program
+	vec3 background_color = { 0, 67.0f / 255.0f, 226.0f / 255.0f }; // Used in the main program
 
 	// The position/orientation of a camera that can rotates freely around a specific position
 	mat4 camera_view;

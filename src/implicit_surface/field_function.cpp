@@ -22,11 +22,11 @@ perlin_noise_params::perlin_noise_params() {
 
 field_function_structure:: field_function_structure() {
     floor_att_dist = 10.0f;
-    cave_height = 20.0f;
-    cave_end_height = cave_height * 1.5f;
+    cave_height_1 = 30.0f;
+    cave_height_max = cave_height_1 * 2.0f;
 
     floor_perlin = perlin_noise_params(0.3f, 2.0f, 2, .01f, 1.0f, .3f);
-    cave_perlin = perlin_noise_params(0.3f, 2.0f, 3, .03f, 8.0f, 5.0f);
+    cave_perlin = perlin_noise_params(0.307f, 2.193f, 3, .03f, 5.47f, 4.6f);
 }
 
 /// <summary>
@@ -60,6 +60,10 @@ float mod(float x, float y) {
     return x;
 }
 
+cgp::vec3 field_function_structure::color_at(cgp::vec3 const& pos) const {
+    return { 0.91f, 0.6f, 0.17f };
+}
+
 float field_function_structure::operator()(cgp::vec3 const& pos) const
 {
     float pot = 0.0f;
@@ -75,32 +79,15 @@ float field_function_structure::operator()(cgp::vec3 const& pos) const
     pot += floor_pot * floor_perlin.multiplier * exp(-z / floor_att_dist) - floor_perlin.offset;
 
     // Add caves
-    if (z < cave_end_height) {
-        float const cave_pot = noise_perlin({ x * cave_perlin.scale, y * cave_perlin.scale, z * cave_perlin.scale }, cave_perlin.octave, cave_perlin.persistency, cave_perlin.frequency_gain);
-        pot += cave_pot * cave_perlin.multiplier * (z < cave_height ? 1 : exp(-(z - cave_height) / 2.0f)) - cave_perlin.offset;
+    if (z < cave_height_max) {
+        bool const low = z < cave_height_1;
+        float cave_pot = noise_perlin({ x * cave_perlin.scale, y * cave_perlin.scale, z * cave_perlin.scale }, cave_perlin.octave, cave_perlin.persistency, cave_perlin.frequency_gain * (low ? 1.0f : 1.3f));
+        cave_pot = cave_pot * cave_perlin.multiplier * (low ? 1 : 0.9f * exp(-(z - cave_height_1) / 20.0f)) - cave_perlin.offset;
+        pot = soft_max(cave_pot, pot);
     }
 
     // Make sure the floor is always displayed
-    if (z < .1) pot = soft_max(0.001f, pot);
+    if (z < .01) pot = soft_max(0.001f, pot);
 
     return pot;
-       /*
-    const float TERRACE_HEIGHT = 20;
-
-    // Caves with terraces
-    const float period_mult = 1.0f + .007f * z;
-    const float floor_1_pot = noise_perlin({ x * CAVES.scale, y * CAVES.scale, z * CAVES.scale }, CAVES.octave, CAVES.persistency, CAVES.frequency_gain) * CAVES.multiplier;
-    pot += period_mult * floor_1_pot - 10.0f;
-
-    // std::cout << z << " -> " << pot << std::endl;
-
-    return pot;
-
-    /*
-    // Caves on the bottom
-    const float floor_1_pot = noise_perlin({ x * CAVES.scale, y * CAVES.scale , z * CAVES.scale }, CAVES.octave, CAVES.persistency, CAVES.frequency_gain) * CAVES.multiplier;
-    float floor_1_mult = (z > CAVES_HEIGHT ? .8f : 1.0f) * (z > CAVES_HEIGHT_2 ? exp(-(z - CAVES_HEIGHT_2) / 20.0f) : 1.0f);
-    pot += floor_1_pot * floor_1_mult;
-
-    return pot - 2.7f;*/
 }

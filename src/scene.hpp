@@ -7,7 +7,6 @@
 #include "terrain.hpp"
 
 #include "implicit_surface/implicit_surface.hpp"
-#include "implicit_surface/gui_helper.hpp"
 
 // This definitions allow to use the structures: mesh, mesh_drawable, etc. without mentionning explicitly cgp::
 using cgp::mesh;
@@ -28,17 +27,14 @@ struct scene_structure : cgp::scene_inputs_generic {
 	camera_projection_perspective camera_projection;
 	window_structure window;
 
-
 	environment_structure environment;   // Standard environment controler
 	input_devices inputs;                // Storage for inputs status (mouse, keyboard, window dimension)
-	opengl_shader_structure shader_custom;
 	
 	// ****************************** //
 	// Elements and shapes of the scene
 	// ****************************** //
 
 	// marching cube
-	gui_parameters gui;
 	implicit_surface_structure implicit_surface; // Structures used for the implicit surface (*)
 	field_function_structure field_function;     // A Parametric function used to generate the discrete field (*)
 

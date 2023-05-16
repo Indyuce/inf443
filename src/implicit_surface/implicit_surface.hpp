@@ -2,7 +2,7 @@
 
 #include "cgp/cgp.hpp"
 #include "field_function.hpp"
-#include "gui_helper.hpp"
+#include "environment.hpp"
 
 
 
@@ -33,11 +33,13 @@ struct implicit_surface_drawable_structure {
 
 // Global structure 
 struct implicit_surface_structure 
-{	
+{
 	implicit_surface_data data_param;
 	implicit_surface_drawable_structure drawable_param;
-	implicit_surface_field_structure field_param;	
+	implicit_surface_field_structure field_param;
+	opengl_shader_structure* p_shader;
 
+	void set_shader(opengl_shader_structure* p_shader_);
 
 	// Helpers functions that should be called in the scene
 	// *************************************************** //
@@ -52,7 +54,9 @@ struct implicit_surface_structure
 	void set_domain(int samples, cgp::vec3 const& length);
 	
 	//   Helper function to update the gui and call the associated update functions
-	void gui_update(gui_parameters& gui, field_function_structure& field_function);
+	void gui_update(environment_structure& env, field_function_structure& field_function);
+
+	void display_gui_implicit_surface(bool& is_update_field, bool& is_update_marching_cube, bool& is_save_obj, environment_structure& gui, field_function_structure& field_function);
 };
 
 
