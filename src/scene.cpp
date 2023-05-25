@@ -54,7 +54,8 @@ void scene_structure::initialize()
 		fish.direction = { 2*distrib(gen)-1,2*distrib(gen)-1,2*distrib(gen)-1 };
 		do{
 			fish.position = { XY_LENGTH * (distrib(gen) - 0.5), XY_LENGTH * (distrib(gen) - 0.5), Z_LENGTH * (distrib(gen) - 0.5) };
-		} while (drawable_chunk->grid(fish.position.x+XY_LENGTH/2, fish.position.y + XY_LENGTH / 2, fish.position.z + Z_LENGTH / 2) < -1);
+		} while (field_function(vec3(fish.position.x, fish.position.y, fish.position.z)) < -1);
+
 		fish.speed = fish_manager.fish_speed;
 		fish.frequency = 4 + 2 * distrib(gen);
 		int random = std::rand()%5;
@@ -84,7 +85,7 @@ void scene_structure::initialize()
 
 	// Camera sphere
 	// ***************************************** //
-	camera_sphere.initialize_data_on_gpu(mesh_primitive_sphere(300));
+	camera_sphere.initialize_data_on_gpu(mesh_primitive_sphere(100));
 	camera_sphere.shader = environment.shader;
 	camera_sphere.material.color = { 1, 1, 1 };
 }
@@ -123,7 +124,7 @@ void scene_structure::display_frame()
 	// Increment time
 	t += dt;
 	if (num_fishes > 0)
-		fish_manager.refresh(drawable_chunk->grid);
+		fish_manager.refresh(field_function);
 	// Draw fishes
 	for (int i = 0;i < fish_manager.fishes.size();i++) {
 		fish fish = fish_manager.fishes[i];

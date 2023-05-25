@@ -16,7 +16,7 @@ void fish_manager::add(fish fish) {
 	fishes.push_back(fish);
 }
 
-void fish_manager::refresh(cgp::grid_3D<float> field) {
+void fish_manager::refresh(field_function_structure field) {
 	counter++;
 
 	std::random_device rd;
@@ -32,11 +32,11 @@ void fish_manager::refresh(cgp::grid_3D<float> field) {
 		int posZ = (int)(fishes[i].position.z + Z_LENGTH / 2);
 		posZ = posZ < 0 ? 0 : posZ >= Z_LENGTH-1 ? Z_LENGTH - 2 : posZ;
 		//A positive field value means that the fish is inside a wall.
-		if (field(posX, posY, posZ) > -obstacle_radius) {
-			float val= field(posX, posY, posZ);
+		if (field(vec3(posX, posY, posZ)) > -obstacle_radius) {
+			float val= field(vec3(posX, posY, posZ));
 			//std::cout << val << std::endl;
 
-			vec3 grad = cgp::normalize(vec3{field(posX+1,posY,posZ)-val,field(posX,posY+1,posZ)-val,field(posX,posY,posZ+1)-val});
+			vec3 grad = cgp::normalize(vec3{field(vec3(posX+1,posY,posZ))-val,field(vec3(posX,posY+1,posZ))-val,field(vec3(posX,posY,posZ+1))-val});
 			fishes[i].direction-= grad/(-val)*obstacle_coef;
 		}
 		cgp::vec3 separation = calculate_separation(i);

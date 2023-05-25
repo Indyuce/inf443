@@ -14,6 +14,10 @@ struct perlin_noise_params
 	perlin_noise_params(float persistency_, float frequency_gain_, int octave_, float scale_, float multiplier_, float offset_);
 
 	perlin_noise_params();
+
+	float compute(cgp::vec3 const& pos) const;
+
+	float compute(cgp::vec2 const& pos) const;
 };
 
 // Parametric function defined as a sum of blobs-like primitives
@@ -47,6 +51,8 @@ struct field_function_structure {
 
 	perlin_noise_params floor_perlin;
 	perlin_noise_params cave_perlin;
+	perlin_noise_params rock_color_perlin;
+	perlin_noise_params mossy_rocks_perlin;
 
 	field_function_structure();
 };

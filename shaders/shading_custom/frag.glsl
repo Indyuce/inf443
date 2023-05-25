@@ -102,7 +102,7 @@ void main()
     float flashlight_magnitude = flashlight * pow(max(dot(Cn, V), 0), flashlight_exp) * max(0, dot(N, Cn));
 
     // Calculate color
-    current_color += ((ambiant + diffuse_magnitude) * material.color + specular_magnitude + direct_magnitude) * eff_light_color + flashlight_magnitude * material.color;
+    current_color += ((ambiant + diffuse_magnitude) * fragment.color + specular_magnitude + direct_magnitude) * eff_light_color + flashlight_magnitude * material.color;
     
     // Fog
     float du = length(C);

@@ -11,7 +11,3 @@ void chunk_data::initialize(cgp::mesh chunk_mesh, cgp::grid_3D<float> grid,cgp::
 	drawable.shader = shader;
 	//drawable.material.texture_settings.two_sided = true;
 }
-
-chunk_data::~chunk_data() {
-	delete &drawable;
-}

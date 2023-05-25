@@ -61,6 +61,10 @@ void implicit_surface_structure::update_marching_cube(field_function_structure c
 	if (position.size() > previous_size) {
 		// If there is more position than allocated - perform a full clear and reallocation from scratch
 		drawable_param.shape.clear();
+
+
+		std::cout << "Initializing on GPU" << std::endl;
+
 		drawable_param.shape.initialize_data_on_gpu(position, normal, color);
 	}
 	else {

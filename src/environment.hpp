@@ -11,7 +11,7 @@ struct environment_structure : environment_generic_structure
 	struct { // Elements of the domain
 		int size_coef = 1;
 		int samples = 100 * size_coef;
-		cgp::vec3 length = { 200 * size_coef, 200 * size_coef, 50 };
+		cgp::vec3 length = { 200 * size_coef, 200 * size_coef, 100 };
 	} domain;
 
 	opengl_shader_structure shader;
