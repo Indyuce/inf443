@@ -16,6 +16,8 @@ layout(location=0) out vec4 FragColor;
 
 // View matrix
 uniform mat4 view;
+uniform vec3 camera_position;
+uniform vec3 camera_direction;
 
 struct material_structure
 {
@@ -28,8 +30,6 @@ uniform float ambiant;
 uniform float diffuse;
 uniform float specular;
 uniform int specularExp;
-uniform float direct;
-uniform int directExp;
 
 uniform float flashlight;
 uniform int flashlight_exp;
@@ -43,25 +43,9 @@ uniform vec3 fog_color;
 uniform float fog_distance;
 // uniform float attenuation_distance;
 
-// Direct exposure to sun
-float near = 0.1; 
-float far  = 1000.0;
-float th   = 300.0f;
-  
-float LinearizeDepth(float depth) 
-{
-    float z = depth * 2.0 - 1.0; // back to NDC 
-    return (2.0 * near * far) / (far + near - z * (far - near));	
-}
-
 void main()
 {
     vec3 current_color = vec3(0.0, 0.0, 0.0);
-  
-    // Get camera location
-    mat3 O = transpose(mat3(view)); // get the orientation matrix
-    vec3 last_col = vec3(view * vec4(0.0, 0.0, 0.0, 1.0)); // get the last column
-    vec3 camera_position = -O * last_col;
 
     // Useful vectors
     vec3 N = normalize(fragment.normal);
@@ -87,22 +71,12 @@ void main()
     // Specular sunlight
     float specular_magnitude = pow(max(dot(R, Cn), 0.0), specularExp) * specular;
     
-    // Direct sunlight
-    float depth = LinearizeDepth(gl_FragCoord.z); // divide by far for demonstration
-    float direct_magnitude = 0;
-    if (depth > th) {
-        float direct_value = max(dot(Cn, light_direction), 0); 
-        direct_value = pow(direct_value, directExp);
-        direct_magnitude = direct * direct_value;
-    }
-    
     // Flashlight. Diffuse and specular are the same, because the light source is also the observer
     // Both effects are wrapped up inside of the 'flashlight' coefficient
-    vec3 V = vec3(vec4(0.0, 0.0, 1.0, 0.0) * view);
-    float flashlight_magnitude = flashlight * pow(max(dot(Cn, V), 0), flashlight_exp) * max(0, dot(N, Cn));
+    float flashlight_magnitude = flashlight * pow(max(dot(Cn, camera_direction), 0), flashlight_exp) * max(0, dot(N, Cn));
 
     // Calculate color
-    current_color += ((ambiant + diffuse_magnitude) * fragment.color + specular_magnitude + direct_magnitude) * eff_light_color + flashlight_magnitude * material.color;
+    current_color += ((ambiant + diffuse_magnitude) * fragment.color + specular_magnitude) * eff_light_color + flashlight_magnitude * material.color;
     
     // Fog
     float du = length(C);

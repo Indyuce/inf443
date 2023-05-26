@@ -32,11 +32,11 @@ namespace cgp
 
 	void camera_first_person_euler::manipulator_translate_in_plane(vec2 const& tr)
 	{
-		position_camera -= translation_in_plane(tr, orientation());
+		position_camera += translation_in_plane(tr, orientation());
 	}
 	void camera_first_person_euler::manipulator_translate_front(float magnitude)
 	{
-		position_camera -= magnitude * front();
+		position_camera += magnitude * front();
 	}
 
 	void camera_first_person_euler::set_rotation_axis(vec3 axis)

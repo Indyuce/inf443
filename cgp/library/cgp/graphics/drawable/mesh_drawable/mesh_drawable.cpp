@@ -54,7 +54,8 @@ namespace cgp
 		ebo_connectivity.initialize_data_on_gpu(data.connectivity);
 
 
-		// Generate VAO
+		// Generate VAO 
+		//   - Preset shader location for default mesh shaders {position:0, normal:1, color:2, uv:3}
 		glGenVertexArrays(1, &vao); opengl_check;
 		glBindVertexArray(vao); opengl_check;
 		opengl_set_vao_location(vbo_position, 0);
@@ -64,12 +65,35 @@ namespace cgp
 		glBindVertexArray(0); opengl_check;
 	}
 
+	template<typename T>
+	void mesh_drawable::initialize_supplementary_data_on_gpu(numarray<T> const& data, GLuint location_index, GLuint divisor)
+	{
+		assert_cgp(location_index >= 4, "Supplementary data should have location >=4 for mesh_drawable.");
+		if (location_index < 4) return;
+
+		int k = location_index - 4;
+		if (k >= supplementary_vbo.size()) 
+			supplementary_vbo.resize(k+1);
+		supplementary_vbo[k].initialize_data_on_gpu(data, divisor);
+
+		// Update VAO (User responsability to not have conflicted location)
+		glBindVertexArray(vao); opengl_check;
+		opengl_set_vao_location(supplementary_vbo[k], location_index);
+		glBindVertexArray(0); opengl_check;
+	}
+
+	template void mesh_drawable::initialize_supplementary_data_on_gpu(numarray<vec2> const& data, GLuint location_index, GLuint divisor);
+	template void mesh_drawable::initialize_supplementary_data_on_gpu(numarray<vec3> const& data, GLuint location_index, GLuint divisor);
+	template void mesh_drawable::initialize_supplementary_data_on_gpu(numarray<vec4> const& data, GLuint location_index, GLuint divisor);
+
 	void mesh_drawable::clear()
 	{
 		vbo_position.clear();
 		vbo_normal.clear();
 		vbo_color.clear();
 		vbo_uv.clear();
+		for(int k=0; k<supplementary_vbo.size(); ++k)
+			supplementary_vbo[k].clear();
 		ebo_connectivity.clear();
 		
 		if(vao!=0)
@@ -98,7 +122,7 @@ namespace cgp
 	}
 
 
-	void draw(mesh_drawable const& drawable, environment_generic_structure const& environment, uniform_generic_structure const& additional_uniforms, GLenum draw_mode)
+	void draw(mesh_drawable const& drawable, environment_generic_structure const& environment, int instance_count, bool expected_uniforms, uniform_generic_structure const& additional_uniforms, GLenum draw_mode)
 	{
 		opengl_check;
 		// Initial clean check
@@ -120,13 +144,13 @@ namespace cgp
 		// ********************************** //
 
 		// send the uniform values for the model and material of the mesh_drawable
-		drawable.send_opengl_uniform();
+		drawable.send_opengl_uniform(expected_uniforms);
 
 		// send the uniform values for the environment
-		environment.send_opengl_uniform(drawable.shader);
+		environment.send_opengl_uniform(drawable.shader, expected_uniforms);
 
 		// [Optionnal] send any additional uniform for this specidic draw call
-		additional_uniforms.send_opengl_uniform(drawable.shader);
+		additional_uniforms.send_opengl_uniform(drawable.shader, expected_uniforms);
 
 
 		// Set textures
@@ -144,7 +168,7 @@ namespace cgp
 
 			glActiveTexture(GL_TEXTURE0 + texture_count); opengl_check;
 			additional_texture.bind();
-			opengl_uniform(drawable.shader, additional_texture_name, texture_count);
+			opengl_uniform(drawable.shader, additional_texture_name, texture_count, expected_uniforms);
 
 			texture_count++;
 		}
@@ -158,7 +182,12 @@ namespace cgp
 
 		// Draw call
 		// ********************************** //
-		glDrawElements(draw_mode, GLsizei(drawable.ebo_connectivity.size * 3), GL_UNSIGNED_INT, nullptr); opengl_check;
+		if (instance_count <= 1) {
+			glDrawElements(draw_mode, GLsizei(drawable.ebo_connectivity.size * 3), GL_UNSIGNED_INT, nullptr); opengl_check;
+		}
+		else {
+			glDrawElementsInstanced(draw_mode, GLsizei(drawable.ebo_connectivity.size * 3), GL_UNSIGNED_INT, nullptr, instance_count); opengl_check;
+		}
 
 
 		// Clean state
@@ -168,7 +197,7 @@ namespace cgp
 		glUseProgram(0);
 	}
 
-	void draw_wireframe(mesh_drawable const& drawable, environment_generic_structure const& environment, vec3 const& color, uniform_generic_structure const& additional_uniforms)
+	void draw_wireframe(mesh_drawable const& drawable, environment_generic_structure const& environment, vec3 const& color, int instance_count, bool expected_uniforms, uniform_generic_structure const& additional_uniforms)
 	{
 #ifndef __EMSCRIPTEN__ 		// Polygon Mode not available in WebGL
 		mesh_drawable wireframe = drawable;
@@ -179,7 +208,7 @@ namespace cgp
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glEnable(GL_POLYGON_OFFSET_LINE);
 		glPolygonOffset(-1.0, 1.0);        opengl_check;
-		draw(wireframe, environment, additional_uniforms);
+		draw(wireframe, environment, instance_count, expected_uniforms, additional_uniforms);
 		glDisable(GL_POLYGON_OFFSET_LINE); opengl_check;
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 #endif
@@ -201,6 +230,6 @@ namespace cgp
 		opengl_uniform(shader, "modelNormal", model_normal_shader, expected);
 
 		// set the material
-		material.send_opengl_uniform(shader);
+		material.send_opengl_uniform(shader, expected);
 	}
 }

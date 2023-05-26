@@ -30,6 +30,23 @@ void scene_structure::initialize()
 		project::path + "shaders/shading_custom/vert.glsl",
 		project::path + "shaders/shading_custom/frag.glsl");
 
+	// Load skybox
+	// ***************************************** //
+	image_structure image_skybox_template = image_load_file("assets/skybox/skybox_05.png");
+	std::vector<image_structure> image_grid = image_split_grid(image_skybox_template, 4, 3);
+	skybox.initialize_data_on_gpu();
+	skybox.texture.initialize_cubemap_on_gpu(
+		image_grid[1].mirror_vertical().rotate_90_degrees_counterclockwise(),
+		image_grid[7].mirror_vertical().rotate_90_degrees_clockwise(),
+		image_grid[10].mirror_horizontal(),
+		image_grid[4].mirror_vertical(),
+		image_grid[5],
+		image_grid[3].mirror_vertical()
+	);
+	skybox.shader.load(
+		project::path + "shaders/skybox/vert.glsl",
+		project::path + "shaders/skybox/frag.glsl");
+
 	// Initialization for the Terrain (Implicit Surface)
 	// ***************************************** //
 	implicit_surface.set_shader(&environment.shader);
@@ -82,12 +99,6 @@ void scene_structure::initialize()
 
 	// Remove warnings for unset uniforms
 	cgp_warning::max_warning = 0;
-
-	// Camera sphere
-	// ***************************************** //
-	camera_sphere.initialize_data_on_gpu(mesh_primitive_sphere(100));
-	camera_sphere.shader = environment.shader;
-	camera_sphere.material.color = { 1, 1, 1 };
 }
 
 float const MOVE_SPEED = .5f;
@@ -121,10 +132,18 @@ vec3 compute_direction(vec2& dir) {
 // Note that you should avoid having costly computation and large allocation defined there. This function is mostly used to call the draw() functions on pre-existing data.
 void scene_structure::display_frame()
 {
+
+	// Draw skybox
+	//  Must be called before drawing the other shapes and without writing in the Depth Buffer
+	glDepthMask(GL_FALSE); // disable depth-buffer writing
+	draw(skybox, environment);
+	glDepthMask(GL_TRUE);  // re-activate depth-buffer write
+
 	// Increment time
 	t += dt;
 	if (num_fishes > 0)
 		fish_manager.refresh(field_function);
+
 	// Draw fishes
 	for (int i = 0;i < fish_manager.fishes.size();i++) {
 		fish fish = fish_manager.fishes[i];
@@ -167,7 +186,7 @@ void scene_structure::display_frame()
 	environment.uniform_generic.uniform_float["diffuse"] = environment.diffuse;
 	environment.uniform_generic.uniform_float["specular"] = environment.specular;
 	environment.uniform_generic.uniform_float["direct"] = environment.direct;
-	environment.uniform_generic.uniform_int["directExp"] = environment.direct_exp;
+	environment.uniform_generic.uniform_int["direct_exp"] = environment.direct_exp;
 	environment.uniform_generic.uniform_vec3["light_color"] = environment.light_color;
 
 	environment.uniform_generic.uniform_float["flashlight"] = environment.flashlight;
@@ -180,16 +199,7 @@ void scene_structure::display_frame()
 	// environment.uniform_generic.uniform_float["attenuation_distance"] = environment.attenuation_distance;
 	environment.uniform_generic.uniform_float["time"] = t;
 
-	// the general syntax to display a mesh is:
-	//   draw(mesh_drawableName, environment);
-	// Note: scene is used to set the uniform parameters associated to the camera, light, etc. to the shader
-	//draw(drawable_chunk->drawable, environment);
-
-	// Draw camera sphere
-	camera_sphere.model.translation = get_camera_position();
-	//draw(camera_sphere, environment);
-
-	// draw implicit surface
+	// Draw terrain
 	draw(implicit_surface.drawable_param.domain_box, environment);
 	draw(implicit_surface.drawable_param.shape, environment);
 }
@@ -215,8 +225,8 @@ void scene_structure::display_gui()
 		// ImGui::SliderFloat("Flashlight Dist", &environment.flashlight_dist, 1.0f, 100.0f);
 
 		// Now Hard coded
-		// ImGui::SliderFloat("Direct", &environment.direct, 0.0f, 100.0f);
-		// ImGui::SliderInt("Direct Exp", &environment.directExp, 1, 1000);
+		ImGui::SliderFloat("Direct", &environment.direct, 0.0f, 10.0f);
+		ImGui::SliderInt("Direct Exp", &environment.direct_exp, 1, 1000);
 
 		ImGui::ColorEdit3("Fog Color", &environment.background_color[0]);
 		ImGui::SliderFloat("Fog Distance", &environment.fog_distance, 100.0f, 1000.0f);

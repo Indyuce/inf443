@@ -117,10 +117,12 @@ float field_function_structure::operator()(cgp::vec3 const& pos) const
     const float z = pos.z - MIN_Z; // <chunk height>/2
     //std::cout << z << std::endl;
 
+    
     // Bottom hills
     float const floor_pot = noise_perlin({ x * floor_perlin.scale, y * floor_perlin.scale }, floor_perlin.octave, floor_perlin.persistency, floor_perlin.frequency_gain);
     pot += floor_pot * floor_perlin.multiplier * exp(-z / floor_att_dist) - floor_perlin.offset;
-
+    
+    /*
     // Add caves
     if (z < cave_height_max) {
         bool const low = z < cave_height_1;
@@ -133,6 +135,7 @@ float field_function_structure::operator()(cgp::vec3 const& pos) const
 
     // Make sure the floor is always displayed
     if (z < .01) pot = soft_max(0.001f, pot);
+    */
 
     return pot;
 }

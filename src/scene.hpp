@@ -29,24 +29,18 @@ struct scene_structure : cgp::scene_inputs_generic {
 
 	environment_structure environment;   // Standard environment controler
 	input_devices inputs;                // Storage for inputs status (mouse, keyboard, window dimension)
+	timer_basic timer;                   // For timer
 	
 	// ****************************** //
 	// Elements and shapes of the scene
 	// ****************************** //
 
-	// marching cube
+	// Skybox
+	cgp::skybox_drawable skybox;
+
+	// Terrain
 	implicit_surface_structure implicit_surface; // Structures used for the implicit surface (*)
 	field_function_structure field_function;     // A Parametric function used to generate the discrete field (*)
-
-
-	timer_basic timer;
-
-	/// <summary>
-	/// Sphere displayed all around the camera to make sure shaders are applied
-	/// in all directions. This is particularily important for direct light source
-	/// illumination shaders.
-	/// </summary>
-	mesh_drawable camera_sphere;
 
 	// Terrain
 	terrain terrain_gen;
