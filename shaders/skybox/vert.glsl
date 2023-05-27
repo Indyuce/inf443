@@ -10,6 +10,7 @@ out struct fragment_data
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+uniform samplerCube image_skybox;
 
 void main()
 {

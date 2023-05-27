@@ -23,6 +23,18 @@ struct perlin_noise_parameters
 	}
 };
 
+struct gerstner_wave {
+    float angle;
+    float amplitude;
+    float steepness;
+    float frequency;
+    float speed;
+
+	gerstner_wave(float angle_, float amplitude_, float steepness_, float frequency_, float speed_);
+
+	void send_opengl_uniform(opengl_shader_structure const& shader, bool expected = true) const;
+};
+
 struct terrain
 {
 	// std::unordered_map<int, chunk_data> loaded_chunks;

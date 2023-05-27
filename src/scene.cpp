@@ -21,18 +21,12 @@ void scene_structure::initialize()
 	// ********************************************** //
 	camera_control.initialize(inputs, window); 
 	camera_control.set_rotation_axis_z(); // camera rotates around z-axis
-	//   look_at(camera_position, targeted_point, up_direction)
+	// look_at(camera_position, targeted_point, up_direction)
 	camera_control.camera_model.distance_to_center = 0.0f;
-
-	// Load terrain and water shader
-	// ***************************************** //
-	environment.shader.load(
-		project::path + "shaders/shading_custom/vert.glsl",
-		project::path + "shaders/shading_custom/frag.glsl");
 
 	// Load skybox
 	// ***************************************** //
-	image_structure image_skybox_template = image_load_file("assets/skybox/skybox_05.png");
+	image_structure image_skybox_template = image_load_file("assets/skybox/skybox_01.jpg");
 	std::vector<image_structure> image_grid = image_split_grid(image_skybox_template, 4, 3);
 	skybox.initialize_data_on_gpu();
 	skybox.texture.initialize_cubemap_on_gpu(
@@ -47,14 +41,25 @@ void scene_structure::initialize()
 		project::path + "shaders/skybox/vert.glsl",
 		project::path + "shaders/skybox/frag.glsl");
 
-	// Initialization for the Terrain (Implicit Surface)
+	// Load water surface & shader
 	// ***************************************** //
+	const float l = terrain::XY_LENGTH;
+	//water_surface.initialize_data_on_gpu(mesh_primitive_torus(100.0f, 20.0f));
+	water_surface.initialize_data_on_gpu(mesh_primitive_grid({ -l, -l, 0 }, { l, -l, 0 }, { l, l, 0 }, { -l, l, 0 }, terrain::XY_SAMPLES, terrain::XY_SAMPLES));
+	water_surface.shader.load(
+		project::path + "shaders/water_surface/vert.glsl",
+		project::path + "shaders/water_surface/frag.glsl");
+	water_surface.supplementary_texture["image_skybox"] = skybox.texture;
+
+	// Load terrain + shader
+	// ***************************************** //
+	environment.shader.load(
+		project::path + "shaders/terrain/vert.glsl",
+		project::path + "shaders/terrain/frag.glsl");
+
 	implicit_surface.set_shader(&environment.shader);
 	implicit_surface.set_domain(environment.domain.samples, environment.domain.length);
 	implicit_surface.update_field(field_function, environment.isovalue);
-
-    // Terrain
-	// ***************************************** //
 	//drawable_chunk = terrain_gen.generate_chunk_data(0, 0, shader_custom);
 
 	// Animation and models
@@ -110,13 +115,6 @@ float const MOVE_SPEED = .5f;
 /// Shaders directly use light direction instead of position.
 /// </summary>
 float const LIGHT_ANGLE = 60;
-
-vec3 scene_structure::get_camera_position() {
-	const mat3 O = transpose(mat3(environment.camera_view)); // get the orientation matrix
-	const vec4 last_col_4 = environment.camera_view * vec4(0.0, 0.0, 0.0, 1.0); // get the last column
-	const vec3 last_col = vec3(last_col_4.x, last_col_4.y, last_col_4.z);
-	return -O * last_col;
-}
 
 vec3 compute_direction(const float& azimut, const float& polar) {
 	const float azimut_rad = azimut * Pi / 180.0f;
@@ -201,7 +199,10 @@ void scene_structure::display_frame()
 
 	// Draw terrain
 	draw(implicit_surface.drawable_param.domain_box, environment);
-	draw(implicit_surface.drawable_param.shape, environment);
+	//draw(implicit_surface.drawable_param.shape, environment);
+
+	// Draw water surface
+	draw(water_surface, environment);
 }
 
 void scene_structure::display_gui()

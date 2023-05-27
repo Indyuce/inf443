@@ -5,12 +5,7 @@
 const float terrain::SCALE = 1.0f / (float)terrain::PRECISION;
 const float terrain::ISOVALUE = 0.0f;
 
-/// <summary>
-/// Uses marching cubes from CGP to compute data of a specific chunk.
-/// </summary>
-/// <param name="chunk_x"></param>
-/// <param name="chunk_y"></param>
-/// <returns></returns>
+
 chunk_data* terrain::generate_chunk_data(int chunk_x, int chunk_y, opengl_shader_structure& shader) {
 
     // Initialize empty chunk data
@@ -28,11 +23,7 @@ chunk_data* terrain::generate_chunk_data(int chunk_x, int chunk_y, opengl_shader
     return data;
 }
 
-/// <summary>
-/// Compures 3D scalar field of potential
-/// </summary>
-/// <param name="domain"></param>
-/// <returns></returns>
+
 grid_3D<float> terrain::compute_scalar_field(spatial_domain_grid_3D const& domain)
 {
     grid_3D<float> field;
@@ -49,3 +40,16 @@ grid_3D<float> terrain::compute_scalar_field(spatial_domain_grid_3D const& domai
 
     return field;
 }
+
+gerstner_wave::gerstner_wave(float angle_, float amplitude_, float steepness_, float frequency_, float speed_) {
+    angle = angle_;
+    amplitude = amplitude_;
+    steepness = steepness_;
+    frequency = frequency_;
+    speed = speed_;
+}
+
+void gerstner_wave::send_opengl_uniform(opengl_shader_structure const& shader, bool expected) const {
+    // TODO
+}
+

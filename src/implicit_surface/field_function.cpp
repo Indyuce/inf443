@@ -117,7 +117,6 @@ float field_function_structure::operator()(cgp::vec3 const& pos) const
     const float z = pos.z - MIN_Z; // <chunk height>/2
     //std::cout << z << std::endl;
 
-    
     // Bottom hills
     float const floor_pot = noise_perlin({ x * floor_perlin.scale, y * floor_perlin.scale }, floor_perlin.octave, floor_perlin.persistency, floor_perlin.frequency_gain);
     pot += floor_pot * floor_perlin.multiplier * exp(-z / floor_att_dist) - floor_perlin.offset;

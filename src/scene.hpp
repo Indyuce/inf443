@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "cgp/cgp.hpp"
 #include "environment.hpp"
 #include "animation.hpp"
@@ -41,6 +40,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 	// Terrain
 	implicit_surface_structure implicit_surface; // Structures used for the implicit surface (*)
 	field_function_structure field_function;     // A Parametric function used to generate the discrete field (*)
+	mesh_drawable water_surface;                 // Mesh for water surface
 
 	// Terrain
 	terrain terrain_gen;
@@ -68,8 +68,6 @@ struct scene_structure : cgp::scene_inputs_generic {
 	// ****************************** //
 
 	void initialize();
-
-	vec3 get_camera_position();
 
 	// Standard initialization to be called before the animation loop
 	void display_frame(); // The frame display to be called within the animation loop
