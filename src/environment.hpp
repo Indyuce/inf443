@@ -4,7 +4,17 @@
 
 using namespace cgp;
 
+struct gerstner_wave {
+	vec2 direction;
+	float amplitude;
+	float steepness;
+	float frequency;
+	float speed;
 
+	gerstner_wave();
+
+	gerstner_wave(vec2 direction, float amplitude_, float steepness_, float frequency_, float speed_);
+};
 
 struct environment_structure : environment_generic_structure
 {
@@ -14,7 +24,9 @@ struct environment_structure : environment_generic_structure
 		cgp::vec3 length = { 200 * size_coef, 200 * size_coef, 100 };
 	} domain;
 
-	opengl_shader_structure shader;
+	environment_structure();
+
+	~environment_structure();
 
 	// Isovalue used during the marching cube
 	float isovalue = 0.4f;
@@ -39,6 +51,14 @@ struct environment_structure : environment_generic_structure
 	int flashlight_exp = 33;
 	float flashlight_dist = 10.0f;
 
+	// Boolean to enable z-position based water shading
+	bool surf_height;
+
+	// Terrain
+	int gerstner_waves_number;
+	gerstner_wave* gerstner_waves;
+	opengl_shader_structure shader;
+
 	// Distance-based fog
 	float fog_distance = 150.0f;
 	// float attenuation_distance = 100.0f;
@@ -57,8 +77,6 @@ struct environment_structure : environment_generic_structure
 	
 	void send_opengl_uniform(opengl_shader_structure const& shader, bool expected = true) const override;
 };
-
-
 
 // Global variables about your project
 struct project {

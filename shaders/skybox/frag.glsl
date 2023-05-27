@@ -22,6 +22,14 @@ void main()
     // Texture color
     vec3 current_color = vec3(texture(image_skybox, fragment.position));
 
+    // Underwater
+    vec3 sky_blue = vec3(0.529,0.808,0.922);
+    float alpha = 0.12; // Water attenuation coefficient at 350nm
+    float scale = 10.0f; // Scale correction coefficient
+    if (fragment.position.z < 0) {
+        current_color = sky_blue * exp(-alpha * scale * abs(normalize(fragment.position).z));
+    }
+
     // Direct sunlight
     vec3 fragment_direction = normalize(fragment.position * 2 - vec3(.5, .5, .5));
     float direct_magnitude = direct * pow(max(dot(fragment_direction, light_direction), 0), direct_exp);

@@ -43,7 +43,6 @@ struct scene_structure : cgp::scene_inputs_generic {
 	mesh_drawable water_surface;                 // Mesh for water surface
 
 	// Terrain
-	terrain terrain_gen;
 	chunk_data* drawable_chunk;
 
 	/**

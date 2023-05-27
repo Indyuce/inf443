@@ -5,7 +5,6 @@
 const float terrain::SCALE = 1.0f / (float)terrain::PRECISION;
 const float terrain::ISOVALUE = 0.0f;
 
-
 chunk_data* terrain::generate_chunk_data(int chunk_x, int chunk_y, opengl_shader_structure& shader) {
 
     // Initialize empty chunk data
@@ -22,7 +21,6 @@ chunk_data* terrain::generate_chunk_data(int chunk_x, int chunk_y, opengl_shader
 
     return data;
 }
-
 
 grid_3D<float> terrain::compute_scalar_field(spatial_domain_grid_3D const& domain)
 {
@@ -41,15 +39,4 @@ grid_3D<float> terrain::compute_scalar_field(spatial_domain_grid_3D const& domai
     return field;
 }
 
-gerstner_wave::gerstner_wave(float angle_, float amplitude_, float steepness_, float frequency_, float speed_) {
-    angle = angle_;
-    amplitude = amplitude_;
-    steepness = steepness_;
-    frequency = frequency_;
-    speed = speed_;
-}
-
-void gerstner_wave::send_opengl_uniform(opengl_shader_structure const& shader, bool expected) const {
-    // TODO
-}
 

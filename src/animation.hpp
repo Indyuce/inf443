@@ -37,5 +37,5 @@ struct fish_manager {
 	cgp::vec3 calculate_out_of_bound_force(int i);
 };
 static const int XY_LENGTH = 100;
-static const int Z_LENGTH = 70;
+static const int Z_LENGTH = 100;
 static int counter;

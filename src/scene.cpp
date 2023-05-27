@@ -34,22 +34,12 @@ void scene_structure::initialize()
 		image_grid[7].mirror_vertical().rotate_90_degrees_clockwise(),
 		image_grid[10].mirror_horizontal(),
 		image_grid[4].mirror_vertical(),
-		image_grid[5],
+		image_grid[5].mirror_horizontal(),
 		image_grid[3].mirror_vertical()
 	);
 	skybox.shader.load(
 		project::path + "shaders/skybox/vert.glsl",
 		project::path + "shaders/skybox/frag.glsl");
-
-	// Load water surface & shader
-	// ***************************************** //
-	const float l = terrain::XY_LENGTH;
-	//water_surface.initialize_data_on_gpu(mesh_primitive_torus(100.0f, 20.0f));
-	water_surface.initialize_data_on_gpu(mesh_primitive_grid({ -l, -l, 0 }, { l, -l, 0 }, { l, l, 0 }, { -l, l, 0 }, terrain::XY_SAMPLES, terrain::XY_SAMPLES));
-	water_surface.shader.load(
-		project::path + "shaders/water_surface/vert.glsl",
-		project::path + "shaders/water_surface/frag.glsl");
-	water_surface.supplementary_texture["image_skybox"] = skybox.texture;
 
 	// Load terrain + shader
 	// ***************************************** //
@@ -60,11 +50,24 @@ void scene_structure::initialize()
 	implicit_surface.set_shader(&environment.shader);
 	implicit_surface.set_domain(environment.domain.samples, environment.domain.length);
 	implicit_surface.update_field(field_function, environment.isovalue);
+	implicit_surface.drawable_param.shape.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Basecolor.png");
+	implicit_surface.drawable_param.shape.supplementary_texture["normal_map"].load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Base_Normal.png");
+	implicit_surface.drawable_param.shape.supplementary_texture["height_map"].load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Base_height.png");
 	//drawable_chunk = terrain_gen.generate_chunk_data(0, 0, shader_custom);
+
+	// Load water surface & shader
+	// ***************************************** //
+	const float l = terrain::XY_LENGTH;
+	//water_surface.initialize_data_on_gpu(mesh_primitive_torus(100.0f, 20.0f));
+	water_surface.initialize_data_on_gpu(mesh_primitive_grid({ -l, -l, 0 }, { l, -l, 0 }, { l, l, 0 }, { -l, l, 0 }, terrain::XY_SAMPLES * 3, terrain::XY_SAMPLES * 3));
+	water_surface.shader.load(
+		project::path + "shaders/water_surface/vert.glsl",
+		project::path + "shaders/water_surface/frag.glsl");
+	water_surface.supplementary_texture["image_skybox"] = skybox.texture;
 
 	// Animation and models
 	// ***************************************** //
-	initialize_models();
+	//initialize_models();
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<> distrib(0, 1);
@@ -196,6 +199,7 @@ void scene_structure::display_frame()
 	environment.uniform_generic.uniform_float["fog_distance"] = environment.fog_distance;
 	// environment.uniform_generic.uniform_float["attenuation_distance"] = environment.attenuation_distance;
 	environment.uniform_generic.uniform_float["time"] = t;
+	environment.uniform_generic.uniform_float["surf_height"] = environment.surf_height;
 
 	// Draw terrain
 	draw(implicit_surface.drawable_param.domain_box, environment);
@@ -232,6 +236,8 @@ void scene_structure::display_gui()
 		ImGui::ColorEdit3("Fog Color", &environment.background_color[0]);
 		ImGui::SliderFloat("Fog Distance", &environment.fog_distance, 100.0f, 1000.0f);
 		// ImGui::SliderFloat("Attenuation Distance", &environment.attenuation_distance, 100.0f, 1000.0f);
+
+		ImGui::Checkbox("Surface Height", &environment.surf_height);
 	}
 }
 
