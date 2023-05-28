@@ -74,12 +74,13 @@ void main()
 
     // Prepare for refraction/reflection
     vec3 N = fragment.normal;
-    float attenuation_distance = 1.0f;
+    float attenuation_distance = 0.0f;
     float eta = water_optical_index;
     float height = abs(floor_level);
     vec3 I = normalize(fragment.position - camera_position);
 
-    // UNDERWATER
+    // Underwater
+    /***********************************************************/
     if (gl_FrontFacing == false) {
 		N = -N;
         attenuation_distance = length(fragment.position - camera_position);
@@ -92,26 +93,34 @@ void main()
         // Inside of Snell's window!!!
         else
             current_color = texture(image_skybox, texture_coords).xyz;
-            
-        // Color attenuation
-        float attenuation = exp(-water_attenuation_coefficient * scale * attenuation_distance);
-        current_color = current_color * attenuation + (1 - attenuation) * fog_color;
 	}
     
-    // ABOVE SURFACE LEVEL
+    // Above Surface Level
+    /***********************************************************/
     else {
+
         eta = 1.0f / eta;
-        // TODO color attenuation  ????
-        attenuation_distance = height / abs(fragment.position.z);
 
         // Partial reflection
         // Water reflects at normal angles and refracts more at steep angles
         float angle_steepness = max(0, dot(vec3(0, 0, 1), -I));
-        
-        vec3 refracted_color = texture(texture_sand, refract(I, N, eta).xy).xyz;
+
+        vec3 refracted_dir      = refract(I, N, eta);
+        float distance_to_water = length(fragment.position - camera_position);
+        float total_distance    = distance_to_water * abs(floor_level - camera_position.z) / abs(camera_position.z - fragment.position.z);
+        vec2 projected          = refracted_dir.xy * total_distance; // Refrac ted direction projected onto expected 
+        vec3 refracted_color    = texture(texture_sand, (camera_position.xy + projected) * sand_texture_scale).xyz;
         vec3 reflected_color = texture(image_skybox, reflect(I, N)).xyz;
+
+        // Attenuation
+        // attenuation_distance = distance_to_water * (dist_ratio - 1);
+
         current_color = mix(refracted_color, reflected_color, 1 - angle_steepness);
     }
+
+    // Color attenuation
+    float attenuation = exp(-water_attenuation_coefficient * scale * attenuation_distance);
+    current_color = mix(fog_color, current_color, attenuation);
 
     // Specular sunlight
     // TODO

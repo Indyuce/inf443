@@ -25,7 +25,7 @@ void scene_structure::initialize()
 
 	// Load skybox
 	// ***************************************** //
-	image_structure image_skybox_template = image_load_file("assets/skybox/hdr_01.png");
+	image_structure image_skybox_template = image_load_file("assets/skybox/skybox_01.jpg"); // hdr_01.png
 	std::vector<image_structure> image_grid = image_split_grid(image_skybox_template, 4, 3);
 	skybox.initialize_data_on_gpu();
 	skybox.texture.initialize_cubemap_on_gpu(
@@ -51,13 +51,16 @@ void scene_structure::initialize()
 	implicit_surface.shader = environment.shader;
 	implicit_surface.set_domain(environment.domain.resolution, environment.domain.length);
 	implicit_surface.update_field(field_function, environment.isovalue);
-	implicit_surface.drawable_param.shape.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Basecolor.png",
+	implicit_surface.drawable_param.shape.texture.load_and_initialize_texture_2d_on_gpu(
+		project::path + "assets/texture/cartoon_sand/Basecolor.png",
 		GL_REPEAT,
 		GL_REPEAT);
-	implicit_surface.drawable_param.shape.supplementary_texture["normal_map"].load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Base_Normal.png",
+	implicit_surface.drawable_param.shape.supplementary_texture["normal_map"].load_and_initialize_texture_2d_on_gpu(
+		project::path + "assets/texture/cartoon_sand/Base_Normal.png",
 		GL_REPEAT,
 		GL_REPEAT);
-	implicit_surface.drawable_param.shape.supplementary_texture["height_map"].load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Base_height.png",
+	implicit_surface.drawable_param.shape.supplementary_texture["height_map"].load_and_initialize_texture_2d_on_gpu(
+		project::path + "assets/texture/cartoon_sand/Base_height.png",
 		GL_REPEAT,
 		GL_REPEAT);
 	//drawable_chunk = terrain_gen.generate_chunk_data(0, 0, shader_custom);
@@ -186,8 +189,7 @@ void scene_structure::display_frame()
 
 	// Get camera location
 	vec3 const camera_position = environment.get_camera_position();
-	environment.uniform_generic.uniform_vec3["camera_position"] = camera_position; 
-	std::cout << "water level " << environment.get_water_level(camera_position, t) << std::endl;
+	environment.uniform_generic.uniform_vec3["camera_position"] = camera_position;
 	environment.uniform_generic.uniform_int["under_water"] = camera_position.z < environment.get_water_level(camera_position, t);
 
 	// Get camera direction

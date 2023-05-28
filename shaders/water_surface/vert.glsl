@@ -106,7 +106,7 @@ struct gerstner_wave {
 };
 
 // List of waves
-bool waves_enabled = true;
+bool waves_enabled = false;
 gerstner_wave gerstner_waves[3];
 
 vec3 gerstner_wave_position(vec3 position) {
