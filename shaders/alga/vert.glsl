@@ -8,9 +8,11 @@ layout(location = 1) in vec3 vertex_normal;   // vertex normal in local space   
 layout(location = 2) in vec3 vertex_color;    // vertex color      (r,g,b)
 layout(location = 3) in vec2 vertex_uv;       // vertex uv-texture (u,v)
 uniform float time;
-uniform vec3 head_position;
-uniform vec3 direction;
+uniform float amplitude;
 uniform float frequency;
+uniform float rotation;
+uniform vec2 flow_dir;
+
 // Output variables sent to the fragment shader
 out struct fragment_data
 {
@@ -44,23 +46,26 @@ float rand(float val)
 }
 
 void main()
-{
+{	
 
 
+	vec3 real_vertex_position = vec3(vertex_position[0], vertex_position[2], vertex_position[1]);
+	//Offset as the base of the alga is not at z=0 initially
+	float z = vertex_position[1] + 0.5;
+	//Rotation to haev algas that differ between each other
+	float x = vertex_position[0] * cos(rotation) + vertex_position[2] * sin(rotation);
+	float y = -vertex_position[0] * sin(rotation) + vertex_position[2] * cos(rotation);
+	//Paramter used in the formula sin(kz+frequency*t) to have waves for the algas.
+	float k = 20;
+	
+	//Deformation depending on z and on the flow vector to which some waves perturbation are added.
+	//This modifies the orthonormal basis to change the direction in which the alga is going.
+	vec3 z_axis=z>0?normalize(vec3(0,0,1)+amplitude*(sqrt(z) +min(1,10*z)*(0.1* sin(0.1*k * z + 0.1 * frequency * (time + 100))+0.02 * sin(k*z+frequency*(time+100)))) * vec3(flow_dir.x, flow_dir.y, 0)):vec3(0,0,1);
+	vec3 x_axis = normalize(vec3(- flow_dir.y,flow_dir.x,0));
+	vec3 y_axis = normalize(cross(z_axis, x_axis));
+	real_vertex_position = x * x_axis + y * y_axis + vertex_position[1] * z_axis;
+	
 
-	float amplitude_coef = 0.03;
-	float vertical_amplitude = 0.05;
-
-	float amplitude = 0;
-	vec3 real_vertex_position = vec3(vertex_position[2], vertex_position[1], -vertex_position[0]);
-	float theta = 0.5 * sin(0.0245*time) * (5-0.8*real_vertex_position[2])*(max(0,1 - 0.5 * length(vec2(real_vertex_position[0], real_vertex_position[1]))));
-	float val=  real_vertex_position[0] * cos(theta) + real_vertex_position[1] * sin(theta);
-	real_vertex_position[1] = real_vertex_position[1] * cos(theta) - real_vertex_position[0] * sin(theta);
-	real_vertex_position[0] = val;
-	float offset = mod(time, 14.0) < 11.0 ? (1.0 / 11.0 * mod(time, 14.0)) :(1-(mod(time, 14.0)-11.0)/3);
-	real_vertex_position += vec3(0, 0, 0.2*length(vec2(real_vertex_position[0], real_vertex_position[1]))*offset);
-	float retract = (mod(time, 14.0) < 11.0 ? (0.8+(0.2 / 11.0 * mod(time, 14.0))) :( 1-0.2/3.*(mod(time, 14.0)-11)));
-	real_vertex_position = vec3(retract * real_vertex_position[0], retract * real_vertex_position[1], real_vertex_position[2]);
 	// The position of the vertex in the world space
 	vec4 position = model * vec4(real_vertex_position, 1.0);
 

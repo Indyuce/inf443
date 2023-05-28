@@ -10,13 +10,12 @@ fish_manager::fish_manager() {
 	this->fish_speed = 0.15f;
 	this->obstacle_radius = 4.0f;
 	this->obstacle_coef = 0.04f;
+	this->num_group = 10;
+	this->min_alga_per_group = 15;
+	this->max_alga_per_group = 30;
 }
 
-void fish_manager::add(fish fish) {
-	fishes.push_back(fish);
-}
-
-void fish_manager::refresh(field_function_structure field) {
+void fish_manager::refresh(field_function_structure field,float t) {
 	counter++;
 
 	std::random_device rd;
@@ -36,15 +35,12 @@ void fish_manager::refresh(field_function_structure field) {
 			float val= field(vec3(posX, posY, posZ));
 			//std::cout << val << std::endl;
 
-			vec3 grad = cgp::normalize(vec3{field(vec3(posX+1,posY,posZ))-val,field(vec3(posX,posY+1,posZ))-val,field(vec3(posX,posY,posZ+1))-val});
-			fishes[i].direction-= grad/(-val)*obstacle_coef;
+			//vec3 grad = cgp::normalize(vec3{field(vec3(posX+1,posY,posZ))-val,field(vec3(posX,posY+1,posZ))-val,field(vec3(posX,posY,posZ+1))-val});
+			//fishes[i].direction-= grad/(-val)*obstacle_coef;
 		}
 		cgp::vec3 separation = calculate_separation(i);
 		cgp::vec3 alignement = calculate_alignement(i);
 		cgp::vec3 cohesion = calculate_cohesion(i);
-		//std::cout << "CO:"<<cohesion << std::endl;
-		//std::cout << "AL:" << alignement << std::endl;
-		//std::cout << "SE:" << separation << std::endl;
 		cgp::vec3 out_of_bound_force = calculate_out_of_bound_force(i);
 		fishes[i].direction += separation;
 		fishes[i].direction += alignement;
@@ -60,7 +56,9 @@ void fish_manager::refresh(field_function_structure field) {
 		//for (int j = 0;j < 3;j++) {
 		//	fishes[i].position[j] = fishes[i].position[j] < 5 ? fishes[i].position[j] > 0 ? fishes[i].position[j] : fishes[i].position[j] + 5 : fishes[i].position[j] - 5;
 		//}
-	}
+	}	
+
+
 }
 
 cgp::vec3 fish_manager::calculate_separation(int i) {
@@ -125,8 +123,8 @@ cgp::vec3 fish_manager::calculate_cohesion(int i) {
 cgp::vec3 fish_manager::calculate_out_of_bound_force(int i) {
 	vec3 position = fishes[i].position;
 	float out_of_bound_force = 0.04f;
-	float forceX = position.x > XY_LENGTH/2 ? -out_of_bound_force : position.x < -XY_LENGTH / 2 ? out_of_bound_force : 0;
-	float forceY = position.y > XY_LENGTH / 2 ? -out_of_bound_force : position.y < -XY_LENGTH / 2 ? out_of_bound_force : 0;
-	float forceZ = position.z > Z_LENGTH/2 ? -out_of_bound_force : position.z < -Z_LENGTH/2 ? out_of_bound_force : 0;
+	float forceX = position.x > 100 ? -out_of_bound_force : position.x < -100? out_of_bound_force : 0;
+	float forceY = position.y > 100 ? -out_of_bound_force : position.y < -100 ? out_of_bound_force : 0;
+	float forceZ = position.z > -10 ? -out_of_bound_force : position.z < -90 ? out_of_bound_force : 0;
 	return { forceX,forceY,forceZ};
 }

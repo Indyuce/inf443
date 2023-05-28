@@ -39,6 +39,7 @@ struct environment_structure : environment_generic_structure {
 	opengl_shader_structure shader;
 	float isovalue = 0.4f; // Isovalue used during the marching cube
 
+	float offset=0;
 	// Domain and physics
 	struct { 
 		int resolution = 2;
