@@ -97,7 +97,7 @@ void animation_loop()
 
 	float const time_interval = fps_record.update();
 	if (fps_record.event) {
-		std::string const title = "CGP Display - " + str(fps_record.fps) + " fps";
+		std::string const title = "Underwater World (" + str(fps_record.fps) + " FPS)";
 		glfwSetWindowTitle(scene.window.glfw_window, title.c_str());
 	}
 
@@ -107,7 +107,6 @@ void animation_loop()
 	scene.inputs.mouse.on_gui = ImGui::GetIO().WantCaptureMouse;
 	scene.inputs.time_interval = time_interval;
 
-
 	// Display the ImGUI interface (button, sliders, etc)
 	scene.display_gui();
 
@@ -116,7 +115,6 @@ void animation_loop()
 
 	// Call the display of the scene
 	scene.display_frame();
-
 
 	// End of ImGui display and handle GLFW events
 	ImGui::End();
@@ -145,11 +143,7 @@ void initialize_default_shaders()
 	curve_drawable::default_shader.load(default_path_shaders +"single_color/vert.glsl", default_path_shaders+"single_color/frag.glsl");
 }
 
-
-
-
-
-//Callback functions
+// Callback functions
 void window_size_callback(GLFWwindow* window, int width, int height);
 void mouse_move_callback(GLFWwindow* window, double xpos, double ypos);
 void mouse_scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
@@ -159,6 +153,8 @@ void keyboard_callback(GLFWwindow* window, int key, int, int action, int mods);
 // Standard initialization procedure
 window_structure standard_window_initialization(int width_target, int height_target)
 {
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+
 	// Create the window using GLFW
 	// ***************************************************** //
 	window_structure window;

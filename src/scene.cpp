@@ -1,15 +1,14 @@
 
 
 #include "scene.hpp"
-#include "animation.hpp"
 #include <random>
 
 using namespace cgp;
 
 scene_structure::scene_structure() {
-	num_fishes = 300;
-	dt = 0.05;
-	t = 0;
+	num_fishes = 0;
+	dt = 0.05f;
+	t = 0.0f;
 }
 
 // This function is called only once at the beginning of the program
@@ -21,22 +20,56 @@ void scene_structure::initialize()
 	// ********************************************** //
 	camera_control.initialize(inputs, window); 
 	camera_control.set_rotation_axis_z(); // camera rotates around z-axis
-	//   look_at(camera_position, targeted_point, up_direction)
+	// look_at(camera_position, targeted_point, up_direction)
 	camera_control.camera_model.distance_to_center = 0.0f;
 
-	// Create the shapes seen in the 3D scene
-	// ********************************************** //
+	// Load skybox
+	// ***************************************** //
+	image_structure image_skybox_template = image_load_file("assets/skybox/skybox_01.jpg");
+	std::vector<image_structure> image_grid = image_split_grid(image_skybox_template, 4, 3);
+	skybox.initialize_data_on_gpu();
+	skybox.texture.initialize_cubemap_on_gpu(
+		image_grid[1].mirror_vertical().rotate_90_degrees_counterclockwise(),
+		image_grid[7].mirror_vertical().rotate_90_degrees_clockwise(),
+		image_grid[10].mirror_horizontal(),
+		image_grid[4].mirror_vertical(),
+		image_grid[5].mirror_horizontal(),
+		image_grid[3].mirror_vertical()
+	);
+	skybox.shader.load(
+		project::path + "shaders/skybox/vert.glsl",
+		project::path + "shaders/skybox/frag.glsl");
 
-	// Load the custom shader
-	shader_custom.load(
-		project::path + "shaders/shading_custom/vert.glsl",
-		project::path + "shaders/shading_custom/frag.glsl");
+	// Load terrain + shader
+	// ***************************************** //
+	environment.shader.load(
+		project::path + "shaders/terrain/vert.glsl",
+		project::path + "shaders/terrain/frag.glsl");
 
-    // Terrain
-	drawable_chunk = terrain_gen.generate_chunk_data(0, 0, shader_custom);
+	field_function.floor_level = environment.floor_level;
+	implicit_surface.floor_level = environment.floor_level;
+	implicit_surface.shader = environment.shader;
+	implicit_surface.set_domain(environment.domain.resolution, environment.domain.length);
+	implicit_surface.update_field(field_function, environment.isovalue);
+	implicit_surface.drawable_param.shape.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Basecolor.png");
+	implicit_surface.drawable_param.shape.supplementary_texture["normal_map"].load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Base_Normal.png");
+	implicit_surface.drawable_param.shape.supplementary_texture["height_map"].load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Base_height.png");
+	//drawable_chunk = terrain_gen.generate_chunk_data(0, 0, shader_custom);
 
+	// Load water surface & shader
+	// ***************************************** //
+	const float l = terrain::XY_LENGTH;
+	//water_surface.initialize_data_on_gpu(mesh_primitive_torus(100.0f, 20.0f));
+	// 3 = TRADEOFF BTW PERFORMANCE AND VISUALS
+	water_surface.initialize_data_on_gpu(mesh_primitive_grid({ -l, -l, 0 }, { l, -l, 0 }, { l, l, 0 }, { -l, l, 0 }, terrain::XY_SAMPLES * 3, terrain::XY_SAMPLES * 3));
+	water_surface.shader.load(
+		project::path + "shaders/water_surface/vert.glsl",
+		project::path + "shaders/water_surface/frag.glsl");
+	water_surface.supplementary_texture["image_skybox"] = skybox.texture;
 
-	initialize_models();
+	// Animation and models
+	// ***************************************** //
+	//initialize_models();
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<> distrib(0, 1);
@@ -48,7 +81,8 @@ void scene_structure::initialize()
 		fish.direction = { 2*distrib(gen)-1,2*distrib(gen)-1,2*distrib(gen)-1 };
 		do{
 			fish.position = { XY_LENGTH * (distrib(gen) - 0.5), XY_LENGTH * (distrib(gen) - 0.5), Z_LENGTH * (distrib(gen) - 0.5) };
-		} while (drawable_chunk->grid(fish.position.x+XY_LENGTH/2, fish.position.y + XY_LENGTH / 2, fish.position.z + Z_LENGTH / 2) < -1);
+		} while (field_function(vec3(fish.position.x, fish.position.y, fish.position.z)) < -1);
+
 		fish.speed = fish_manager.fish_speed;
 		fish.frequency = 4 + 2 * distrib(gen);
 		int random = std::rand()%5;
@@ -75,53 +109,35 @@ void scene_structure::initialize()
 
 	// Remove warnings for unset uniforms
 	cgp_warning::max_warning = 0;
-
-	// Camera sphere
-	camera_sphere.initialize_data_on_gpu(mesh_primitive_sphere(300));
-	camera_sphere.shader = shader_custom;
-	camera_sphere.material.color = { 0,0,0 };
 }
 
 float const MOVE_SPEED = .5f;
-
-/// <summary>
-/// Angle of light relative to horizon. Light is not modeled by a position
-/// but rather by a direction as light from the sun is supposed to be infinitely
-/// far away. This means all light rays have approximately the same direction.
-/// Shaders directly use light direction instead of position.
-/// </summary>
-float const LIGHT_ANGLE = 60;
-
-vec3 scene_structure::get_camera_position() {
-	const mat3 O = transpose(mat3(environment.camera_view)); // get the orientation matrix
-	const vec4 last_col_4 = environment.camera_view * vec4(0.0, 0.0, 0.0, 1.0); // get the last column
-	const vec3 last_col = vec3(last_col_4.x, last_col_4.y, last_col_4.z);
-	return -O * last_col;
-}
-
-vec3 compute_direction(const float& azimut, const float& polar) {
-	const float azimut_rad = azimut * Pi / 180.0f;
-	const float polar_rad = polar * Pi / 180.0f;
-	return vec3(cos(azimut_rad) * sin(polar_rad), sin(azimut_rad) * sin(polar_rad), cos(polar_rad));
-}
-
-vec3 compute_direction(vec2& dir) {
-	return compute_direction(dir.x, dir.y);
-}
 
 // This function is called permanently at every new frame
 // Note that you should avoid having costly computation and large allocation defined there. This function is mostly used to call the draw() functions on pre-existing data.
 void scene_structure::display_frame()
 {
+
+	// Draw skybox
+	// Must be called before drawing the other shapes and without writing in the Depth Buffer
+	// ***************************************** //
+	glDepthMask(GL_FALSE); // disable depth-buffer writing
+	draw(skybox, environment);
+	glDepthMask(GL_TRUE);  // re-activate depth-buffer write
+
 	// Increment time
+	// ***************************************** //
 	t += dt;
-	fish_manager.refresh(drawable_chunk->grid);
+	if (num_fishes > 0)
+		fish_manager.refresh(field_function);
+
 	// Draw fishes
+	// ***************************************** //
 	for (int i = 0;i < fish_manager.fishes.size();i++) {
 		fish fish = fish_manager.fishes[i];
 		
-		rotation_transform horiz_transformation = cgp::rotation_transform::from_axis_angle({ 0,0,1 }, 3.14159 / 2);
-		rotation_transform X_transformation = cgp::rotation_transform::from_axis_angle({ 1,0,0 }, 3.14159 / 2);
+		rotation_transform horiz_transformation = cgp::rotation_transform::from_axis_angle({ 0,0,1 }, 3.14159f / 2.0f);
+		rotation_transform X_transformation = cgp::rotation_transform::from_axis_angle({ 1,0,0 }, 3.14159f / 2.0f);
 		//boid.model.rotation = cgp::rotation_transform::from_vector_transform({ 0,0,1 }, boid_direction[i])*;
 		//fish.model.model.rotation = cgp::rotation_transform::from_axis_angle(fish.direction, 3.14159 / 2) * cgp::rotation_transform::from_vector_transform({ 0,0,1 }, fish.direction);
 		fish.model.model.rotation = cgp::rotation_transform::from_vector_transform({ 0,0,1 }, fish.direction);
@@ -135,9 +151,11 @@ void scene_structure::display_frame()
 	}
 
 	// Update time
+	// ***************************************** //
 	timer.update();
 
 	// Move player
+	// ***************************************** //
 	if (camera_control.inputs->keyboard.is_pressed(GLFW_KEY_W))
 		camera_control.camera_model.manipulator_translate_front(-MOVE_SPEED);
 	else if (camera_control.inputs->keyboard.is_pressed(GLFW_KEY_S))
@@ -153,52 +171,60 @@ void scene_structure::display_frame()
 	else if (camera_control.inputs->keyboard.shift)
 		camera_control.camera_model.manipulator_translate_in_plane(vec2(0, MOVE_SPEED));
 
-	// Send uniforms
-	environment.uniform_generic.uniform_float["ambiant"] = environment.ambiant;
-	environment.uniform_generic.uniform_float["diffuse"] = environment.diffuse;
-	environment.uniform_generic.uniform_float["specular"] = environment.specular;
-	environment.uniform_generic.uniform_float["direct"] = environment.direct;
-	environment.uniform_generic.uniform_int["directExp"] = environment.directExp;
-	environment.uniform_generic.uniform_vec3["light_color"] = environment.light_color;
+	// Uniforms
+	// ***************************************** //
 
-	environment.uniform_generic.uniform_vec3["light_direction"] = compute_direction(environment.light_direction);
-	environment.uniform_generic.uniform_int["specularExp"] = environment.specularExp;
-	environment.uniform_generic.uniform_vec3["fog_color"] = environment.background_color;
-	environment.uniform_generic.uniform_float["fog_distance"] = environment.fog_distance;
-	environment.uniform_generic.uniform_float["attenuation_distance"] = environment.attenuation_distance;
+	// Time
 	environment.uniform_generic.uniform_float["time"] = t;
 
-	// the general syntax to display a mesh is:
-	//   draw(mesh_drawableName, environment);
-	// Note: scene is used to set the uniform parameters associated to the camera, light, etc. to the shader
-    draw(drawable_chunk->drawable, environment);
+	// Get camera location
+	vec3 const camera_position = environment.get_camera_position();
+	environment.uniform_generic.uniform_vec3["camera_position"] = camera_position;
+	environment.uniform_generic.uniform_int["underwater"] = camera_position.z < environment.get_water_level(camera_position, t);
 
-	// Draw camera sphere
-	camera_sphere.model.translation = get_camera_position();
-	draw(camera_sphere, environment);
+	// Get camera direction
+	vec3 camera_direction = vec3(environment.camera_view(2, 0), environment.camera_view(2, 1), environment.camera_view(2, 2));
+	environment.uniform_generic.uniform_vec3["camera_direction"] = camera_direction;
+
+	// Draw terrain
+	// ***************************************** //
+	draw(implicit_surface.drawable_param.domain_box, environment);
+	draw(implicit_surface.drawable_param.shape, environment);
+
+	// Draw water surface
+	// ***************************************** //
+	draw(water_surface, environment);
 }
 
 void scene_structure::display_gui()
 {
-	ImGui::ColorEdit3("Light Color", &environment.light_color[0]);
-	ImGui::SliderFloat2("Light Azimut/Polar", &environment.light_direction[0], -180, 180);
 
-	ImGui::SliderFloat("Ambiant", &environment.ambiant, 0.0f, 1.0f);
-	ImGui::SliderFloat("Diffuse", &environment.diffuse, 0.0f, 1.0f);
-	ImGui::SliderFloat("Specular", &environment.specular, 0.0f, 1.0f);
-	ImGui::SliderInt("Specular Exp", &environment.specularExp, 1, 255);
+	// Handle the gui values and the updates using the helper methods (*)
+	implicit_surface.gui_update(environment, field_function);
 
-	ImGui::SliderFloat("offset", &environment.offset, -20.0f, 0.0f);
-	ImGui::SliderFloat("lin mul", &environment.hmul, 0.0f, 10.0f);
-	ImGui::SliderFloat("tot mul", &environment.mult, 1.0f, 20.0f);
+	if (ImGui::CollapsingHeader("Environment")) {
 
-	//ImGui::SliderFloat("Direct", &environment.direct, 0.0f, 100.0f);
-	//ImGui::SliderInt("Direct Exp", &environment.directExp, 1, 1000);
+		ImGui::ColorEdit3("Light Color", &environment.light_color[0]);
+		ImGui::SliderFloat2("Light Azimut/Polar", &environment.light_direction[0], -180, 180);
 
-	ImGui::ColorEdit3("Fog Color", &environment.background_color[0]);
-	ImGui::SliderFloat("Fog Distance", &environment.fog_distance, 100.0f, 1000.0f);
-	ImGui::SliderFloat("Attenuation Distance", &environment.attenuation_distance, 100.0f, 1000.0f);
+		ImGui::SliderFloat("Ambiant", &environment.ambiant, 0.0f, 1.0f);
+		ImGui::SliderFloat("Diffuse", &environment.diffuse, 0.0f, 1.0f);
+		ImGui::SliderFloat("Specular", &environment.specular, 0.0f, 1.0f);
+		ImGui::SliderInt("Specular Exp", &environment.specular_exp, 1, 255);
 
+		ImGui::SliderFloat("Flashlight", &environment.flashlight, 0.0f, 10.0f);
+		ImGui::SliderInt("Flashlight Exp", &environment.flashlight_exp, 1, 255);
+		// ImGui::SliderFloat("Flashlight Dist", &environment.flashlight_dist, 1.0f, 100.0f);
+
+		// Now Hard coded
+		ImGui::SliderFloat("Direct", &environment.direct, 0.0f, 10.0f);
+		ImGui::SliderInt("Direct Exp", &environment.direct_exp, 1, 1000);
+
+		ImGui::ColorEdit3("Fog Color", &environment.background_color[0]);
+		ImGui::SliderFloat("Attenuation Coef", &environment.water_attenuation_coefficient, 0.0f, 1.0f);
+
+		ImGui::Checkbox("Water Surface Height Shader", &environment.surf_height);
+	}
 }
 
 void scene_structure::initialize_models() {
@@ -267,7 +293,6 @@ void scene_structure::initialize_models() {
 		project::path + "shaders/alga/frag.glsl");
 	alga.shader = alga_shader;
 }
-
 
 void scene_structure::mouse_move_event()
 {

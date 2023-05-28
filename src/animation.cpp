@@ -16,7 +16,7 @@ void fish_manager::add(fish fish) {
 	fishes.push_back(fish);
 }
 
-void fish_manager::refresh(cgp::grid_3D<float> field) {
+void fish_manager::refresh(field_function_structure field) {
 	counter++;
 
 	std::random_device rd;
@@ -32,11 +32,11 @@ void fish_manager::refresh(cgp::grid_3D<float> field) {
 		int posZ = (int)(fishes[i].position.z + Z_LENGTH / 2);
 		posZ = posZ < 0 ? 0 : posZ >= Z_LENGTH-1 ? Z_LENGTH - 2 : posZ;
 		//A positive field value means that the fish is inside a wall.
-		if (field(posX, posY, posZ) > -obstacle_radius) {
-			float val= field(posX, posY, posZ);
+		if (field(vec3(posX, posY, posZ)) > -obstacle_radius) {
+			float val= field(vec3(posX, posY, posZ));
 			//std::cout << val << std::endl;
 
-			vec3 grad = cgp::normalize(vec3{field(posX+1,posY,posZ)-val,field(posX,posY+1,posZ)-val,field(posX,posY,posZ+1)-val});
+			vec3 grad = cgp::normalize(vec3{field(vec3(posX+1,posY,posZ))-val,field(vec3(posX,posY+1,posZ))-val,field(vec3(posX,posY,posZ+1))-val});
 			fishes[i].direction-= grad/(-val)*obstacle_coef;
 		}
 		cgp::vec3 separation = calculate_separation(i);
@@ -52,7 +52,7 @@ void fish_manager::refresh(cgp::grid_3D<float> field) {
 		fishes[i].direction += out_of_bound_force;
 		if(counter%10==0)
 			fishes[i].direction += {0.05 * (distrib(gen)-0.5), 0.05 * (distrib(gen) - 0.5), 0.05 * (distrib(gen) - 0.5)};
-		fishes[i].direction.z *= 0.99;
+		fishes[i].direction.z *= 0.99f;
 		fishes[i].direction = cgp::normalize(fishes[i].direction);
 		
 		fishes[i].position = fishes[i].position + (fish_speed * fishes[i].direction);
@@ -124,7 +124,7 @@ cgp::vec3 fish_manager::calculate_cohesion(int i) {
 
 cgp::vec3 fish_manager::calculate_out_of_bound_force(int i) {
 	vec3 position = fishes[i].position;
-	float out_of_bound_force = 0.04;
+	float out_of_bound_force = 0.04f;
 	float forceX = position.x > XY_LENGTH/2 ? -out_of_bound_force : position.x < -XY_LENGTH / 2 ? out_of_bound_force : 0;
 	float forceY = position.y > XY_LENGTH / 2 ? -out_of_bound_force : position.y < -XY_LENGTH / 2 ? out_of_bound_force : 0;
 	float forceZ = position.z > Z_LENGTH/2 ? -out_of_bound_force : position.z < -Z_LENGTH/2 ? out_of_bound_force : 0;

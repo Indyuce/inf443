@@ -1,10 +1,9 @@
 #pragma once
 
-
 #include "cgp/cgp.hpp"
 #include "environment.hpp"
 #include "animation.hpp"
-#include "terrain.hpp"
+#include "implicit_surface/implicit_surface.hpp"
 
 // This definitions allow to use the structures: mesh, mesh_drawable, etc. without mentionning explicitly cgp::
 using cgp::mesh;
@@ -27,24 +26,19 @@ struct scene_structure : cgp::scene_inputs_generic {
 
 	environment_structure environment;   // Standard environment controler
 	input_devices inputs;                // Storage for inputs status (mouse, keyboard, window dimension)
-	opengl_shader_structure shader_custom;
+	timer_basic timer;                   // For timer
 	
 	// ****************************** //
 	// Elements and shapes of the scene
 	// ****************************** //
 
-	timer_basic timer;
-
-	/// <summary>
-	/// Sphere displayed all around the camera to make sure shaders are applied
-	/// in all directions. This is particularily important for direct light source
-	/// illumination shaders.
-	/// </summary>
-	mesh_drawable camera_sphere;
+	// Skybox
+	cgp::skybox_drawable skybox;
 
 	// Terrain
-	terrain terrain_gen;
-	chunk_data* drawable_chunk;
+	implicit_surface_structure implicit_surface; // Structures used for the implicit surface (*)
+	field_function_structure field_function;     // A Parametric function used to generate the discrete field (*)
+	mesh_drawable water_surface;                 // Mesh for water surface
 
 	/**
 	 *  Fishes
@@ -68,8 +62,6 @@ struct scene_structure : cgp::scene_inputs_generic {
 	// ****************************** //
 
 	void initialize();
-
-	vec3 get_camera_position();
 
 	// Standard initialization to be called before the animation loop
 	void display_frame(); // The frame display to be called within the animation loop

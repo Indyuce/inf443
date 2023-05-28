@@ -51,10 +51,11 @@ namespace cgp
 
         if (is_mipmap) {
             glGenerateMipmap(texture_type); opengl_check;
-
-            glTexParameteri(texture_type, GL_TEXTURE_MAG_FILTER, texture_mag_filter); opengl_check;
-            glTexParameteri(texture_type, GL_TEXTURE_MIN_FILTER, texture_min_filter); opengl_check;
         }
+
+        glTexParameteri(texture_type, GL_TEXTURE_MAG_FILTER, texture_mag_filter); opengl_check;
+        glTexParameteri(texture_type, GL_TEXTURE_MIN_FILTER, texture_min_filter); opengl_check;
+        
 
         glBindTexture(texture_type, 0); opengl_check;
 
@@ -119,6 +120,21 @@ namespace cgp
 
     }
 
+    void opengl_texture_image_structure::initialize_texture_2d_on_gpu(int width_arg, int height_arg, GLint format_arg, GLenum texture_type_arg, GLint wrap_s, GLint wrap_t, GLint texture_mag_filter, GLint texture_min_filter)
+    {
+        // Store parameters
+        width = width_arg;
+        height = height_arg;
+        format = format_arg;
+        texture_type = texture_type_arg;
+
+        // Initialize texture data on GPU
+        id = opengl_initialize_texture_2d_on_gpu(width, height, (void*)NULL,
+            wrap_s, wrap_t, texture_type, format, format_to_data_type(format), format_to_component(format),
+            false, texture_mag_filter, texture_min_filter);
+
+    }
+
 
     void opengl_texture_image_structure::initialize_cubemap_on_gpu(image_structure const& x_neg, image_structure const& x_pos, image_structure const& y_neg, image_structure const& y_pos, image_structure const& z_neg, image_structure const& z_pos)
     {
@@ -145,8 +161,6 @@ namespace cgp
         GLenum const gl_format = format_to_data_type(format);    // expect GL_RGB or GL_RGBA
         GLenum const gl_component = format_to_component(format); // expect GL_UNISNGED_BYTE
 
-        std::cout << (gl_format == GL_RGBA) << std::endl;
-        std::cout << (gl_component == GL_UNSIGNED_BYTE) << std::endl;
 
         glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, format, h, h, 0, gl_format, gl_component, ptr(x_neg.data));
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, format, h, h, 0, gl_format, gl_component, ptr(x_pos.data));

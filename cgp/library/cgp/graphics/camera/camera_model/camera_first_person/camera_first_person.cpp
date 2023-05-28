@@ -34,14 +34,14 @@ namespace cgp
 	}
 	void camera_first_person::manipulator_translate_front(float magnitude)
 	{
-		position_camera -= magnitude * front();
+		position_camera += magnitude * front();
 	}
 
 	void camera_first_person::look_at(vec3 const& eye, vec3 const& center, vec3 const& up)
 	{
 		frame F = camera_frame_look_at(eye, center, up);
 		orientation_camera = F.orientation;
-		position_camera = center;
+		position_camera = eye;
 	}
 
 }

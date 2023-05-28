@@ -1,5 +1,6 @@
 #include "cgp/cgp.hpp"
 #include "terrain.hpp"
+#include "implicit_surface/field_function.hpp"
 #pragma once
 
 
@@ -26,7 +27,7 @@ struct alga_group {
 struct fish_manager {
 	fish_manager();
 	void add(fish fish);
-	void refresh(cgp::grid_3D<float> grid);
+	void refresh(field_function_structure field);
 	std::vector<fish> fishes;
 	std::vector<alga_group> alga_groups;
 	float separation_coef, alignement_coef, cohesion_coef,fish_radius,fish_speed,obstacle_radius,obstacle_coef;
@@ -36,5 +37,5 @@ struct fish_manager {
 	cgp::vec3 calculate_out_of_bound_force(int i);
 };
 static const int XY_LENGTH = 100;
-static const int Z_LENGTH = 70;
+static const int Z_LENGTH = 100;
 static int counter;
