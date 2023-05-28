@@ -7,7 +7,7 @@
 using namespace cgp;
 
 scene_structure::scene_structure() {
-	num_fishes = 100;
+	num_fishes = 300;
 	dt = 0.05;
 	t = 0;
 }
