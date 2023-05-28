@@ -9,16 +9,19 @@ struct environment_structure : environment_generic_structure {
 
 	// Water
 	float water_level = 0.0f;
-	float floor_level = -100.0f;
+	float floor_level = -200.0f;
 	vec3 fog_color = { 0.016f, 0.659f, 0.878f }; // Used in the main program
 	vec3& background_color = fog_color; // Used in the main program
 	bool surf_height; // Boolean to enable height-based water shading
+	float water_optical_index = 1.332f; // Optical ratio of water
+	float sand_texture_scale = 0.01f;
 
 	// Light parameters
 	vec3 player_light = { 1.0f, 1.0f, 1.0f };
 	vec3 light_color = { 1,1,1 };//{ .988f, .898f, .439f };
-	vec2 light_direction = { 120.0f, -95.0f }; // Matches the skybox
-	float water_attenuation_coefficient = 0;// .12f;
+	vec2 light_direction = { -115.7f, 156.9f }; // Matches the skybox
+	float water_attenuation_coefficient = .12f;
+	float water_reflection_coefficient = .5f; // How much water will reflect when standing above surface
 
 	// Phong illumination
 	float ambiant = 0.3f;
@@ -31,13 +34,15 @@ struct environment_structure : environment_generic_structure {
 	int direct_exp = 800;
 
 	// Player Flashlight
-	float flashlight = 0;//2.41f;
+	bool flashlight_on = false;
+	float flashlight = 2.41f;
 	int flashlight_exp = 33;
 	float flashlight_dist = 10.0f;
 
 	// Terrain
 	opengl_shader_structure shader;
 	float isovalue = 0.4f; // Isovalue used during the marching cube
+	float terrain_ridges = 3.0f;
 
 	float offset=0;
 	// Domain and physics

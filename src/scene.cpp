@@ -23,7 +23,7 @@ void scene_structure::initialize()
 
 	// Load skybox
 	// ***************************************** //
-	image_structure image_skybox_template = image_load_file("assets/skybox/skybox_01.jpg");
+	image_structure image_skybox_template = image_load_file("assets/skybox/skybox_01.jpg"); // hdr_01.png
 	std::vector<image_structure> image_grid = image_split_grid(image_skybox_template, 4, 3);
 	skybox.initialize_data_on_gpu();
 	skybox.texture.initialize_cubemap_on_gpu(
@@ -49,9 +49,18 @@ void scene_structure::initialize()
 	implicit_surface.shader = environment.shader;
 	implicit_surface.set_domain(environment.domain.resolution, environment.domain.length);
 	implicit_surface.update_field(field_function, environment.isovalue);
-	implicit_surface.drawable_param.shape.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Basecolor.png");
-	implicit_surface.drawable_param.shape.supplementary_texture["normal_map"].load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Base_Normal.png");
-	implicit_surface.drawable_param.shape.supplementary_texture["height_map"].load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Base_height.png");
+	implicit_surface.drawable_param.shape.texture.load_and_initialize_texture_2d_on_gpu(
+		project::path + "assets/texture/cartoon_sand/Basecolor.png",
+		GL_REPEAT,
+		GL_REPEAT);
+	implicit_surface.drawable_param.shape.supplementary_texture["normal_map"].load_and_initialize_texture_2d_on_gpu(
+		project::path + "assets/texture/cartoon_sand/Base_Normal.png",
+		GL_REPEAT,
+		GL_REPEAT);
+	implicit_surface.drawable_param.shape.supplementary_texture["height_map"].load_and_initialize_texture_2d_on_gpu(
+		project::path + "assets/texture/cartoon_sand/Base_height.png",
+		GL_REPEAT,
+		GL_REPEAT);
 	//drawable_chunk = terrain_gen.generate_chunk_data(0, 0, shader_custom);
 
 	// Load water surface & shader
@@ -64,6 +73,7 @@ void scene_structure::initialize()
 		project::path + "shaders/water_surface/vert.glsl",
 		project::path + "shaders/water_surface/frag.glsl");
 	water_surface.supplementary_texture["image_skybox"] = skybox.texture;
+	water_surface.supplementary_texture["texture_sand"] = implicit_surface.drawable_param.shape.texture;
 
 	// Animation and models
 	// ***************************************** //
@@ -129,7 +139,7 @@ void scene_structure::initialize()
 	cgp_warning::max_warning = 0;
 }
 
-float const MOVE_SPEED = .5f;
+float const MOVE_SPEED = 3.0f;
 
 // This function is called permanently at every new frame
 // Note that you should avoid having costly computation and large allocation defined there. This function is mostly used to call the draw() functions on pre-existing data.
@@ -223,7 +233,7 @@ void scene_structure::display_frame()
 	// Get camera location
 	vec3 const camera_position = environment.get_camera_position();
 	environment.uniform_generic.uniform_vec3["camera_position"] = camera_position;
-	environment.uniform_generic.uniform_int["underwater"] = camera_position.z < environment.get_water_level(camera_position, timer.t);
+	environment.uniform_generic.uniform_int["under_water"] = camera_position.z < environment.get_water_level(camera_position, timer.t);
 
 	// Get camera direction
 	vec3 camera_direction = vec3(environment.camera_view(2, 0), environment.camera_view(2, 1), environment.camera_view(2, 2));
@@ -255,11 +265,10 @@ void scene_structure::display_gui()
 		ImGui::SliderFloat("Specular", &environment.specular, 0.0f, 1.0f);
 		ImGui::SliderInt("Specular Exp", &environment.specular_exp, 1, 255);
 
+		ImGui::Checkbox("Toggle Flashlight", &environment.flashlight_on);
 		ImGui::SliderFloat("Flashlight", &environment.flashlight, 0.0f, 10.0f);
 		ImGui::SliderInt("Flashlight Exp", &environment.flashlight_exp, 1, 255);
-		// ImGui::SliderFloat("Flashlight Dist", &environment.flashlight_dist, 1.0f, 100.0f);
 
-		// Now Hard coded
 		ImGui::SliderFloat("Direct", &environment.direct, 0.0f, 10.0f);
 		ImGui::SliderInt("Direct Exp", &environment.direct_exp, 1, 1000);
 
@@ -267,6 +276,8 @@ void scene_structure::display_gui()
 		ImGui::SliderFloat("Attenuation Coef", &environment.water_attenuation_coefficient, 0.0f, 1.0f);
 
 		ImGui::Checkbox("Water Surface Height Shader", &environment.surf_height);
+		ImGui::SliderFloat("Water Optical Index", &environment.water_optical_index, 0.5f, 2.0f);
+		ImGui::SliderFloat("Terrain Ridges", &environment.terrain_ridges, 0.0f, 10.0f);
 	}
 }
 

@@ -25,6 +25,12 @@ static void update_colors(std::vector<vec3>& color, int number_of_vertex, std::v
 		color[k] = field_function.color_at(position[k]);
 	}
 }
+/*
+static void update_uvs(std::vector<vec3>& uv, int number_of_vertex, std::vector<vec3>& position, field_function_structure const& field_function) {
+	for (int k = 0; k < number_of_vertex; ++k) {
+		uv[k] = field_function.uv_at(position[k]);
+	}
+}*/
 
 void implicit_surface_structure::update_marching_cube(field_function_structure const& field_function, float isovalue)
 {
@@ -32,6 +38,8 @@ void implicit_surface_structure::update_marching_cube(field_function_structure c
 	std::vector<vec3>& position = data_param.position;
 	std::vector<vec3>& normal = data_param.normal;
 	//std::vector<vec3>& color = data_param.color;
+	//std::vector<vec3>& uv = data_param.normal;
+
 	size_t& number_of_vertex = data_param.number_of_vertex;
 	spatial_domain_grid_3D const& domain = field_param.domain;
 	std::vector<cgp::marching_cube_relative_coordinates> relative_coord = data_param.relative;
@@ -44,7 +52,7 @@ void implicit_surface_structure::update_marching_cube(field_function_structure c
 	// Compute the Marching Cube
 	number_of_vertex = marching_cube(position, field.data.data, domain, isovalue, &relative_coord);
 
-	// Resize the vector of normals if needed
+	// Resize vectors if needed
 	if (normal.size() < position.size()) {
 		normal.resize(position.size());
 		//color.resize(position.size());
@@ -52,15 +60,12 @@ void implicit_surface_structure::update_marching_cube(field_function_structure c
 
 	update_normals(normal, number_of_vertex, gradient, relative_coord);
 	//update_colors(color, number_of_vertex, position, field_function);
+	//update_uvs(normal, number_of_vertex, position, field_function);
 
 	// Update the display of the mesh
 	if (position.size() > previous_size) {
 		// If there is more position than allocated - perform a full clear and reallocation from scratch
 		drawable_param.shape.clear();
-
-
-		std::cout << "Initializing on GPU" << std::endl;
-
 		drawable_param.shape.initialize_data_on_gpu(position, normal);
 	}
 	else {

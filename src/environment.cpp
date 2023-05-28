@@ -43,6 +43,7 @@ void environment_structure::send_opengl_uniform(opengl_shader_structure const& s
 	// environment.uniform_generic.uniform_float["attenuation_distance"] = environment.attenuation_distance;
 
 	// Player flashlight
+	opengl_uniform(shader, "flashlight_on", flashlight_on, expected);
 	opengl_uniform(shader, "flashlight", flashlight, expected);
 	opengl_uniform(shader, "flashlight_exp", flashlight_exp, expected);
 	opengl_uniform(shader, "flashlight_exp", flashlight_exp, expected);
@@ -57,6 +58,9 @@ void environment_structure::send_opengl_uniform(opengl_shader_structure const& s
 	// Extra
 	opengl_uniform(shader, "projection", camera_projection, expected);
 	opengl_uniform(shader, "view", camera_view, expected);
+	opengl_uniform(shader, "ridge_coefficient", terrain_ridges, expected);
+	opengl_uniform(shader, "water_optical_index", water_optical_index, expected);
+	opengl_uniform(shader, "sand_texture_scale", sand_texture_scale, expected);
 
 	// Extra uniforms
 	uniform_generic.send_opengl_uniform(shader, false);
@@ -67,36 +71,6 @@ static int const gerstner_waves_number = 3;
 static bool filled = false;
 static gerstner_wave gerstner_waves[gerstner_waves_number];
 static perlin_noise_params surface_ridges = perlin_noise_params(0.8f, 1.3f, 7, .02f, 1.0f, vec2(1, 1), 0.5f, 10.0f);
-
-// CODE DUPLICATION
-vec3 gerstner_wave_position(vec3 const& position, float& time) {
-	vec3 wave_position = position;
-	vec2 xy = vec2(position.x, position.y);
-
-	// Big waves
-	for (int i = 0; i < gerstner_waves_number; ++i) {
-		float proj = dot(xy, gerstner_waves[i].direction),
-			phase = time * gerstner_waves[i].speed,
-			theta = proj * gerstner_waves[i].frequency + phase,
-			height = gerstner_waves[i].amplitude * sin(theta);
-
-		wave_position.z += height;
-
-		float maximum_width = gerstner_waves[i].steepness *
-			gerstner_waves[i].amplitude,
-			width = maximum_width * cos(theta),
-			x = gerstner_waves[i].direction.x,
-			y = gerstner_waves[i].direction.y;
-
-		wave_position.x += x * width;
-		wave_position.y += y * width;
-	}
-
-	// Surface ridges
-	wave_position.z += surface_ridges.compute(xy, time);
-
-	return wave_position;
-}
 
 // CODE DUPLICATION
 float environment_structure::get_water_level(vec3 const& position, float& time) const
@@ -128,6 +102,21 @@ float environment_structure::get_water_level(vec3 const& position, float& time) 
 		}
 	}
 	
+	float total_height = 0;
+	vec2 xy = vec2(position.x, position.y);
 
-	return gerstner_wave_position(position, time).z;
+	// Big waves
+	for (int i = 0; i < gerstner_waves_number; ++i) {
+		float proj = dot(xy, gerstner_waves[i].direction),
+			phase = time * gerstner_waves[i].speed,
+			theta = proj * gerstner_waves[i].frequency + phase,
+			height = gerstner_waves[i].amplitude * sin(theta);
+
+		total_height += height;
+	}
+
+	// Surface ridges
+	total_height += surface_ridges.compute(xy, time);
+
+	return total_height;
 }
