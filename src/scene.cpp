@@ -25,7 +25,7 @@ void scene_structure::initialize()
 
 	// Load skybox
 	// ***************************************** //
-	image_structure image_skybox_template = image_load_file("assets/skybox/skybox_01.jpg");
+	image_structure image_skybox_template = image_load_file("assets/skybox/hdr_01.png");
 	std::vector<image_structure> image_grid = image_split_grid(image_skybox_template, 4, 3);
 	skybox.initialize_data_on_gpu();
 	skybox.texture.initialize_cubemap_on_gpu(
@@ -72,6 +72,7 @@ void scene_structure::initialize()
 		project::path + "shaders/water_surface/vert.glsl",
 		project::path + "shaders/water_surface/frag.glsl");
 	water_surface.supplementary_texture["image_skybox"] = skybox.texture;
+	water_surface.supplementary_texture["texture_sand"] = implicit_surface.drawable_param.shape.texture;
 
 	// Animation and models
 	// ***************************************** //
@@ -230,6 +231,7 @@ void scene_structure::display_gui()
 		ImGui::SliderFloat("Attenuation Coef", &environment.water_attenuation_coefficient, 0.0f, 1.0f);
 
 		ImGui::Checkbox("Water Surface Height Shader", &environment.surf_height);
+		ImGui::SliderFloat("Water Optical Index", &environment.water_optical_index, 0.5f, 2.0f);
 		ImGui::SliderFloat("Terrain Ridges", &environment.terrain_ridges, 0.0f, 10.0f);
 	}
 }

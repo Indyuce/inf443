@@ -26,9 +26,9 @@ void main()
     vec3 sky_blue = vec3(0.529,0.808,0.922);
     float alpha = 0.12; // Water attenuation coefficient at 350nm
     float scale = 10.0f; // Scale correction coefficient
-    if (fragment.position.z < 0) {
-        current_color = sky_blue * exp(-alpha * scale * abs(normalize(fragment.position).z));
-    }
+   // if (fragment.position.z < 0) {
+   //     current_color = sky_blue * exp(-alpha * scale * abs(normalize(fragment.position).z));
+   // }
 
     // Direct sunlight
     vec3 fragment_direction = normalize(fragment.position);

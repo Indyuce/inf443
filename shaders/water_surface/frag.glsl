@@ -43,6 +43,7 @@ uniform bool surf_height;
 uniform float floor_level;
 uniform float scale;
 uniform float water_attenuation_coefficient;
+uniform float water_optical_index;
 
 struct gerstner_wave {
     vec2 direction;
@@ -53,10 +54,12 @@ struct gerstner_wave {
 };
 
 uniform samplerCube image_skybox;
+uniform sampler2D texture_sand;
+uniform float sand_texture_scale;
 
 void main()
 {
-    vec3 current_color = vec3(0.0, 0.0, 0.0);
+    vec3 current_color;
 
     // Height map shader for debug
     /***********************************************************/
@@ -69,28 +72,40 @@ void main()
         return;
     }
 
-    // Useful vectors
+    // Prepare for refraction/reflection
     vec3 N = fragment.normal;
-    float eta = 0.751f;
     float attenuation_distance = 1.0f;
+    float eta = water_optical_index;
+    vec3 I = normalize(fragment.position - camera_position);
+
+    // UNDERWATER
     if (gl_FrontFacing == false) {
 		N = -N;
-        eta = 1.0f / eta;
         attenuation_distance = length(fragment.position - camera_position);
+        vec3 texture_coords = refract(I, N, eta);
 
-	} else {
+        // Total reflection
+        if (texture_coords.x == 0 && texture_coords.y == 0 && texture_coords.z == 0)
+            current_color = texture(texture_sand, reflect(I, N).xy).xyz;
+
+        // Inside of Snell's window!!!
+        else
+            current_color = texture(image_skybox, texture_coords).xyz;
+	}
+    
+    // ABOVE SURFACE LEVEL
+    else {
+        eta = 1.0f / eta;
+        // TODO linear absorbance
         // attenuation_distance = floor_level / abs(fragment.position.z);
         attenuation_distance = 0;
+        vec3 texture_coords = refract(I, N, eta);
+        current_color = texture(texture_sand, reflect(I, N).xy).xyz;
+
+
+
+
     }
-
-    // Refract vector
-    vec3 I = normalize(fragment.position - camera_position);
-    vec3 texture_coords = refract(I, N, eta);
-    if (texture_coords.x == 0 && texture_coords.y == 0 && texture_coords.z == 0)
-        texture_coords = reflect(I, N);
-
-    vec3 mapped_color = vec3(texture(image_skybox, texture_coords));
-    current_color = mapped_color;
 
     // Color attenuation
     float attenuation = exp(-water_attenuation_coefficient * scale * attenuation_distance);

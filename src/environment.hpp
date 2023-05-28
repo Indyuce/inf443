@@ -13,11 +13,13 @@ struct environment_structure : environment_generic_structure {
 	vec3 fog_color = { 0.016f, 0.659f, 0.878f }; // Used in the main program
 	vec3& background_color = fog_color; // Used in the main program
 	bool surf_height; // Boolean to enable height-based water shading
+	float water_optical_index = 1.332f; // Optical ratio of water
+	float sand_texture_scale = 0.01f;
 
 	// Light parameters
 	vec3 player_light = { 1.0f, 1.0f, 1.0f };
 	vec3 light_color = { 1,1,1 };//{ .988f, .898f, .439f };
-	vec2 light_direction = { -120.0f, 115.0f }; // Matches the skybox
+	vec2 light_direction = { -115.7f, 156.9f }; // Matches the skybox
 	float water_attenuation_coefficient = 0;// .12f;
 
 	// Phong illumination

@@ -58,6 +58,8 @@ void environment_structure::send_opengl_uniform(opengl_shader_structure const& s
 	opengl_uniform(shader, "projection", camera_projection, expected);
 	opengl_uniform(shader, "view", camera_view, expected);
 	opengl_uniform(shader, "ridge_coefficient", terrain_ridges, expected);
+	opengl_uniform(shader, "water_optical_index", water_optical_index, expected);
+	opengl_uniform(shader, "sand_texture_scale", sand_texture_scale, expected);
 
 	// Extra uniforms
 	uniform_generic.send_opengl_uniform(shader, false);

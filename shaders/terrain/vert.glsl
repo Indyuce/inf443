@@ -26,6 +26,7 @@ uniform mat4 modelNormal; // Model without scaling used for the normal. modelNor
 
 uniform sampler2D height_map;
 uniform float ridge_coefficient;
+uniform float sand_texture_scale;
 
 void main()
 {
@@ -37,7 +38,7 @@ void main()
 	vec4 normal = modelNormal * vec4(vertex_normal, 0.0);
 
 	// Height map
-	vec2 fixed_vertex_uv = vertex_position.xy / 100.0f;
+	vec2 fixed_vertex_uv = vertex_position.xy * sand_texture_scale;
 	position += normal * vec4(texture(height_map, fixed_vertex_uv).xyz, 0) * ridge_coefficient;
 
 	// The projected position of the vertex in the normalized device coordinates:
