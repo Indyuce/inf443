@@ -153,6 +153,8 @@ void keyboard_callback(GLFWwindow* window, int key, int, int action, int mods);
 // Standard initialization procedure
 window_structure standard_window_initialization(int width_target, int height_target)
 {
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+
 	// Create the window using GLFW
 	// ***************************************************** //
 	window_structure window;

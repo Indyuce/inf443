@@ -1,4 +1,4 @@
-#version 330 core
+ #version 330 core
 
 // Vertex shader - this code is executed for every vertex of the shape
 
@@ -21,8 +21,6 @@ out struct fragment_data
 uniform mat4 model; // Model affine transform matrix associated to the current shape
 uniform mat4 view;  // View matrix (rigid transform) of the camera
 uniform mat4 projection; // Projection (perspective or orthogonal) matrix of the camera
-
-uniform mat4 modelNormal; // Model without scaling used for the normal. modelNormal = transpose(inverse(model))
 uniform float time;
 
 // This shader uses Perlin noise to generate small bumps on the water 
@@ -109,7 +107,7 @@ struct gerstner_wave {
 
 // List of waves
 bool waves_enabled = true;
-uniform gerstner_wave gerstner_waves[3];
+gerstner_wave gerstner_waves[3];
 
 vec3 gerstner_wave_position(vec3 position) {
     vec3 wave_position = position.xyz;
@@ -140,27 +138,6 @@ vec3 gerstner_wave_position(vec3 position) {
     
     return wave_position;
 }
-
-/*
-vec3 estimate_normal(vec2 pos) {
-
-    // Small increments
-    float incr = .0001;
-    vec2 dx    = vec2(incr, 0);
-    vec2 dy    = vec2(0, incr);
-
-    // Z differences
-    float dz_x = surface_ridges.normal_boost * (noise_perlin(pos + dx, surface_ridges) - noise_perlin(pos - dx, surface_ridges));
-    float dz_y = surface_ridges.normal_boost * (noise_perlin(pos + dy, surface_ridges) - noise_perlin(pos - dy, surface_ridges));
-    
-    // Vectors
-    vec3 v_x = vec3(2 * incr, 0, dz_x);
-    vec3 v_y = vec3(0, 2 * incr, dz_y);
-
-    // Normal is cross product of previous vectors
-    return cross(v_x, v_y);
-}
-*/
 
 mat3 rotation_matrix(vec3 axis, float angle) {
     axis = normalize(axis);
@@ -222,8 +199,33 @@ vec3 gerstner_wave_normal(vec3 position) {
 
 void main()
 {
+
+    // Proceduraly generated wave parameters like Perlin noise
+    // TODO convert waves to object buffer
+    float angle_init = radians(25.0f);
+	float angle_diff = radians(157.45f);
+	float amplitude_init = 0.5f;
+	float amplitude_persistance = 0.6f;
+	float steepness_init = 0.1f;
+	float steepness_persistance = 1.6f;
+	float frequency_init = 0.1f;
+	float frequency_gain = 2.0f;
+	float speed_init = 0.5f;
+	float speed_gain = 1.3f;
+
+    if (waves_enabled)
+        for (int i = 0; i < gerstner_waves.length(); ++i) {
+            vec2 dir = vec2(cos(angle_init), sin(angle_init));
+            gerstner_waves[i] = gerstner_wave(dir, amplitude_init, steepness_init, frequency_init, speed_init);
+        
+            angle_init     += angle_diff;
+            amplitude_init *= amplitude_persistance;
+            steepness_init *= steepness_persistance;
+            frequency_init *= frequency_gain;
+            speed_init     *= speed_gain;
+        }
+
 	vec4 position = model * vec4(vertex_position, 1.0); // Position in world space
-    vec4 normal = modelNormal * vec4(vertex_normal, 0.0);
 
 	// Gerstner waves + Perlin noise
     vec3 wave_position = gerstner_wave_position(position.xyz);

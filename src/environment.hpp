@@ -4,32 +4,7 @@
 
 using namespace cgp;
 
-struct gerstner_wave {
-	vec2 direction;
-	float amplitude;
-	float steepness;
-	float frequency;
-	float speed;
-
-	gerstner_wave();
-
-	gerstner_wave(vec2 direction, float amplitude_, float steepness_, float frequency_, float speed_);
-};
-
-struct environment_structure : environment_generic_structure
-{
-	struct { // Elements of the domain
-		int size_coef = 1;
-		int samples = 100 * size_coef;
-		cgp::vec3 length = { 200 * size_coef, 200 * size_coef, 100 };
-	} domain;
-
-	environment_structure();
-
-	~environment_structure();
-
-	// Isovalue used during the marching cube
-	float isovalue = 0.4f;
+struct environment_structure : environment_generic_structure {
 
 	// Light parameters
 	vec3 player_light = { 1.0f, 1.0f, 1.0f };
@@ -55,22 +30,25 @@ struct environment_structure : environment_generic_structure
 	bool surf_height;
 
 	// Terrain
-	int gerstner_waves_number;
-	gerstner_wave* gerstner_waves;
 	opengl_shader_structure shader;
+	float isovalue = 0.4f; // Isovalue used during the marching cube
+
+	struct { // Elements of the domain
+		int size_coef = 1;
+		int samples = 100 * size_coef;
+		cgp::vec3 length = { 200 * size_coef, 200 * size_coef, 100 };
+	} domain;
 
 	// Distance-based fog
 	float fog_distance = 150.0f;
 	// float attenuation_distance = 100.0f;
 
 	// Scene background color
+	// TODO remove, unused
 	vec3 background_color = { 0, 67.0f / 255.0f, 226.0f / 255.0f }; // Used in the main program
 
-	// The position/orientation of a camera that can rotates freely around a specific position
-	mat4 camera_view;
-
-	// A projection structure (perspective or orthogonal projection)
-	mat4 camera_projection;
+	mat4 camera_view; // The position/orientation of a camera that can rotates freely around a specific position
+	mat4 camera_projection; // A projection structure (perspective or orthogonal projection)
 
 	// Additional uniforms that can be attached to the environment if needed (empty by default)
 	uniform_generic_structure uniform_generic;

@@ -237,7 +237,7 @@ void scene_structure::display_gui()
 		ImGui::SliderFloat("Fog Distance", &environment.fog_distance, 100.0f, 1000.0f);
 		// ImGui::SliderFloat("Attenuation Distance", &environment.attenuation_distance, 100.0f, 1000.0f);
 
-		ImGui::Checkbox("Surface Height", &environment.surf_height);
+		ImGui::Checkbox("Water Surface Height Shader", &environment.surf_height);
 	}
 }
 
