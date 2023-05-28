@@ -73,36 +73,6 @@ static gerstner_wave gerstner_waves[gerstner_waves_number];
 static perlin_noise_params surface_ridges = perlin_noise_params(0.8f, 1.3f, 7, .02f, 1.0f, vec2(1, 1), 0.5f, 10.0f);
 
 // CODE DUPLICATION
-vec3 gerstner_wave_position(vec3 const& position, float& time) {
-	vec3 wave_position = position;
-	vec2 xy = vec2(position.x, position.y);
-
-	// Big waves
-	for (int i = 0; i < gerstner_waves_number; ++i) {
-		float proj = dot(xy, gerstner_waves[i].direction),
-			phase = time * gerstner_waves[i].speed,
-			theta = proj * gerstner_waves[i].frequency + phase,
-			height = gerstner_waves[i].amplitude * sin(theta);
-
-		wave_position.z += height;
-
-		float maximum_width = gerstner_waves[i].steepness *
-			gerstner_waves[i].amplitude,
-			width = maximum_width * cos(theta),
-			x = gerstner_waves[i].direction.x,
-			y = gerstner_waves[i].direction.y;
-
-		wave_position.x += x * width;
-		wave_position.y += y * width;
-	}
-
-	// Surface ridges
-	wave_position.z += surface_ridges.compute(xy, time);
-
-	return wave_position;
-}
-
-// CODE DUPLICATION
 float environment_structure::get_water_level(vec3 const& position, float& time) const
 {
 	if (!filled) {
@@ -132,6 +102,21 @@ float environment_structure::get_water_level(vec3 const& position, float& time) 
 		}
 	}
 	
+	float total_height = 0;
+	vec2 xy = vec2(position.x, position.y);
 
-	return gerstner_wave_position(position, time).z;
+	// Big waves
+	for (int i = 0; i < gerstner_waves_number; ++i) {
+		float proj = dot(xy, gerstner_waves[i].direction),
+			phase = time * gerstner_waves[i].speed,
+			theta = proj * gerstner_waves[i].frequency + phase,
+			height = gerstner_waves[i].amplitude * sin(theta);
+
+		total_height += height;
+	}
+
+	// Surface ridges
+	total_height += surface_ridges.compute(xy, time);
+
+	return total_height;
 }

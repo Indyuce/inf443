@@ -186,8 +186,9 @@ void scene_structure::display_frame()
 
 	// Get camera location
 	vec3 const camera_position = environment.get_camera_position();
-	environment.uniform_generic.uniform_vec3["camera_position"] = camera_position;
-	environment.uniform_generic.uniform_int["underwater"] = camera_position.z < environment.get_water_level(camera_position, t);
+	environment.uniform_generic.uniform_vec3["camera_position"] = camera_position; 
+	std::cout << "water level " << environment.get_water_level(camera_position, t) << std::endl;
+	environment.uniform_generic.uniform_int["under_water"] = camera_position.z < environment.get_water_level(camera_position, t);
 
 	// Get camera direction
 	vec3 camera_direction = vec3(environment.camera_view(2, 0), environment.camera_view(2, 1), environment.camera_view(2, 2));
@@ -223,7 +224,6 @@ void scene_structure::display_gui()
 		ImGui::SliderFloat("Flashlight", &environment.flashlight, 0.0f, 10.0f);
 		ImGui::SliderInt("Flashlight Exp", &environment.flashlight_exp, 1, 255);
 
-		// Now Hard coded
 		ImGui::SliderFloat("Direct", &environment.direct, 0.0f, 10.0f);
 		ImGui::SliderInt("Direct Exp", &environment.direct_exp, 1, 1000);
 

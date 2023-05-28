@@ -76,6 +76,7 @@ void main()
     vec3 N = fragment.normal;
     float attenuation_distance = 1.0f;
     float eta = water_optical_index;
+    float height = abs(floor_level);
     vec3 I = normalize(fragment.position - camera_position);
 
     // UNDERWATER
@@ -91,13 +92,17 @@ void main()
         // Inside of Snell's window!!!
         else
             current_color = texture(image_skybox, texture_coords).xyz;
+            
+        // Color attenuation
+        float attenuation = exp(-water_attenuation_coefficient * scale * attenuation_distance);
+        current_color = current_color * attenuation + (1 - attenuation) * fog_color;
 	}
     
     // ABOVE SURFACE LEVEL
     else {
         eta = 1.0f / eta;
-        // TODO color attenuation (abs(floor_level / fragment.position.z) ?)
-        attenuation_distance = 0;
+        // TODO color attenuation  ????
+        attenuation_distance = height / abs(fragment.position.z);
 
         // Partial reflection
         // Water reflects at normal angles and refracts more at steep angles
@@ -108,10 +113,6 @@ void main()
         current_color = mix(refracted_color, reflected_color, 1 - angle_steepness);
     }
 
-    // Color attenuation
-    float attenuation = exp(-water_attenuation_coefficient * scale * attenuation_distance);
-    current_color = current_color * attenuation + (1 - attenuation) * fog_color;
-   
     // Specular sunlight
     // TODO
     // float specular_magnitude = pow(max(dot(R, Cn), 0.0), specularExp) * specular;
