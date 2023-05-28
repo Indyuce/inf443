@@ -72,7 +72,6 @@ void implicit_surface_structure::update_marching_cube(field_function_structure c
 	}
 
 	drawable_param.shape.shader = shader;
-	drawable_param.shape.model.translation.z = floor_level;
 }
 
 
@@ -95,7 +94,6 @@ void implicit_surface_structure::update_field(field_function_structure const& fi
 	// Reset the domain visualization (lightweight - can be cleared at each call)
 	drawable_param.domain_box.clear();
 	drawable_param.domain_box.initialize_data_on_gpu(domain.export_segments_for_drawable_border());
-	drawable_param.domain_box.model.translation.z = floor_level;
 }
 
 int3 to_int3(vec3 const& vec) {
@@ -133,7 +131,7 @@ void implicit_surface_structure::display_gui_implicit_surface(bool& is_update_fi
 		is_update_field |= ImGui::SliderInt("Octave", &field_function.floor_perlin.octave, 1, 5);
 		is_update_field |= ImGui::SliderFloat("Scale", &field_function.floor_perlin.scale, 0.1f, 2.5f);
 		is_update_field |= ImGui::SliderFloat("Mult", &field_function.floor_perlin.multiplier, 0.1f, 3.0f);
-		is_update_field |= ImGui::SliderFloat("Offset", &field_function.floor_perlin.offset, 0.0f, 10.0f);
+		is_update_field |= ImGui::SliderFloat("Offset", &field_function.floor_perlin.offset, -10.0f, 10.0f);
 	}
 }
 

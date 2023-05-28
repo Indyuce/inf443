@@ -16,7 +16,7 @@ struct environment_structure : environment_generic_structure {
 
 	// Light parameters
 	vec3 player_light = { 1.0f, 1.0f, 1.0f };
-	vec3 light_color = { .988f, .898f, .439f };
+	vec3 light_color = { 1,1,1 };//{ .988f, .898f, .439f };
 	vec2 light_direction = { 120.0f, -95.0f }; // Matches the skybox
 	float water_attenuation_coefficient = 0;// .12f;
 

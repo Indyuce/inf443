@@ -55,14 +55,14 @@ struct field_function_structure {
 	* Value of d
 	*/
 	float floor_att_dist;
-	float cave_height_1;
-	float cave_height_max;
-	float terrace_period;
+	//float cave_height_1;
+	//float cave_height_max;
+	//float terrace_period;
 
 	perlin_noise_params floor_perlin;
-	perlin_noise_params cave_perlin;
-	perlin_noise_params rock_color_perlin;
-	perlin_noise_params mossy_rocks_perlin;
+	//perlin_noise_params cave_perlin;
+	//perlin_noise_params rock_color_perlin;
+	//perlin_noise_params mossy_rocks_perlin;
 
 	field_function_structure();
 };

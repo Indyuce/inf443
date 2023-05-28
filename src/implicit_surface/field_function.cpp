@@ -57,14 +57,14 @@ float perlin_noise_params::compute(cgp::vec2 const& pos, float time) const
 }
 
 field_function_structure::field_function_structure() {
-    floor_att_dist = 6.0f;
-    cave_height_1 = 30.0f;
-    cave_height_max = cave_height_1 * 2.0f;
+    floor_att_dist = 2.0f;
+    //cave_height_1 = 30.0f;
+    //cave_height_max = cave_height_1 * 2.0f;
 
-    floor_perlin = perlin_noise_params(0.175f, 1.25f, 2, .005f, 0.188f * 12.1825, 0.0f);
-    cave_perlin = perlin_noise_params(0.307f, 2.193f, 3, .015f, 5.47f, 4.6f);
-    rock_color_perlin = perlin_noise_params(0.4f, 3.0f, 4, .05f, 1.0f, 0.0f);
-    mossy_rocks_perlin = perlin_noise_params(0.4f, 3.0f, 2, .05f, 10.0f, 3.0f);
+    floor_perlin = perlin_noise_params(0.175f, 1.25f, 2, .005f, 0.188f * 12.1825, -.17f);
+    //cave_perlin = perlin_noise_params(0.307f, 2.193f, 3, .015f, 5.47f, 4.6f);
+    //rock_color_perlin = perlin_noise_params(0.4f, 3.0f, 4, .05f, 1.0f, 0.0f);
+    //mossy_rocks_perlin = perlin_noise_params(0.4f, 3.0f, 2, .05f, 10.0f, 3.0f);
 }
 
 /// <summary>
@@ -98,6 +98,7 @@ float mod(float x, float y) {
     return x;
 }
 
+/*
 /// <summary>
 /// Unused at the moment. Volumetric color looks REALLY bad when not using a custom texture.
 /// Formula to compute terrain color at a specific location
@@ -128,7 +129,7 @@ cgp::vec3 field_function_structure::color_at(const vec3& pos) const {
     voxel_color = p2 * voxel_color + (1 - p2) * color_moss;
 
     return voxel_color;
-}
+}*/
 
 /// <summary>
 /// Formula to compute terrain potential (implicit surface) at a specific location
@@ -155,7 +156,6 @@ float field_function_structure::operator()(cgp::vec3 const& pos) const
     }
 
     // Make sure the floor is always displayed
-    if (z < .01) pot = soft_max(0.001f, pot);
     */
 
     return pot;
