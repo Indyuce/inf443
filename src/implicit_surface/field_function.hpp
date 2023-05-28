@@ -36,11 +36,14 @@ struct perlin_noise_params
 struct field_function_structure {
 	float floor_level;
 
-	// Query color of terrain at any point p
-	cgp::vec3 color_at(cgp::vec3 const& pos) const;
-
 	// Query the value of the function at any point p
 	float operator()(cgp::vec3 const& p) const;
+
+	// Query color of terrain at any point p
+	//cgp::vec3 uv_at(cgp::vec3 const& pos) const;
+
+	// Query color of terrain at any point p
+	cgp::vec3 color_at(cgp::vec3 const& pos) const;
 
 	/*
 	* Perlin noise is added to the total noise level to generate the floor level at z close to 0

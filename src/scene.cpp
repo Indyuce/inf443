@@ -51,9 +51,15 @@ void scene_structure::initialize()
 	implicit_surface.shader = environment.shader;
 	implicit_surface.set_domain(environment.domain.resolution, environment.domain.length);
 	implicit_surface.update_field(field_function, environment.isovalue);
-	implicit_surface.drawable_param.shape.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Basecolor.png");
-	implicit_surface.drawable_param.shape.supplementary_texture["normal_map"].load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Base_Normal.png");
-	implicit_surface.drawable_param.shape.supplementary_texture["height_map"].load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Base_height.png");
+	implicit_surface.drawable_param.shape.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Basecolor.png",
+		GL_REPEAT,
+		GL_REPEAT);
+	implicit_surface.drawable_param.shape.supplementary_texture["normal_map"].load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Base_Normal.png",
+		GL_REPEAT,
+		GL_REPEAT);
+	implicit_surface.drawable_param.shape.supplementary_texture["height_map"].load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Base_height.png",
+		GL_REPEAT,
+		GL_REPEAT);
 	//drawable_chunk = terrain_gen.generate_chunk_data(0, 0, shader_custom);
 
 	// Load water surface & shader
@@ -111,7 +117,7 @@ void scene_structure::initialize()
 	cgp_warning::max_warning = 0;
 }
 
-float const MOVE_SPEED = .5f;
+float const MOVE_SPEED = 3.0f;
 
 // This function is called permanently at every new frame
 // Note that you should avoid having costly computation and large allocation defined there. This function is mostly used to call the draw() functions on pre-existing data.
@@ -224,6 +230,7 @@ void scene_structure::display_gui()
 		ImGui::SliderFloat("Attenuation Coef", &environment.water_attenuation_coefficient, 0.0f, 1.0f);
 
 		ImGui::Checkbox("Water Surface Height Shader", &environment.surf_height);
+		ImGui::SliderFloat("Terrain Ridges", &environment.terrain_ridges, 0.0f, 10.0f);
 	}
 }
 

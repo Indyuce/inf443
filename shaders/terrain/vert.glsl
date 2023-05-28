@@ -24,6 +24,8 @@ uniform mat4 projection; // Projection (perspective or orthogonal) matrix of the
 
 uniform mat4 modelNormal; // Model without scaling used for the normal. modelNormal = transpose(inverse(model))
 
+uniform sampler2D height_map;
+uniform float ridge_coefficient;
 
 void main()
 {
@@ -34,14 +36,18 @@ void main()
 	// The normal of the vertex in the world space
 	vec4 normal = modelNormal * vec4(vertex_normal, 0.0);
 
+	// Height map
+	vec2 fixed_vertex_uv = vertex_position.xy / 100.0f;
+	position += normal * vec4(texture(height_map, fixed_vertex_uv).xyz, 0) * ridge_coefficient;
+
 	// The projected position of the vertex in the normalized device coordinates:
 	vec4 position_projected = projection * view * position;
 
 	// Fill the parameters sent to the fragment shader
 	fragment.position = position.xyz;
 	fragment.normal   = normal.xyz;
-	fragment.color = vertex_color;
-	fragment.uv = vertex_uv;
+	fragment.color    = vertex_color;
+	fragment.uv       = fixed_vertex_uv;
 
 	// gl_Position is a built-in variable which is the expected output of the vertex shader
 	gl_Position = position_projected; // gl_Position is the projected vertex position (in normalized device coordinates)

@@ -31,8 +31,8 @@ void main()
     }
 
     // Direct sunlight
-    vec3 fragment_direction = normalize(fragment.position * 2 - vec3(.5, .5, .5));
-    float direct_magnitude = direct * pow(max(dot(fragment_direction, light_direction), 0), direct_exp);
+    vec3 fragment_direction = normalize(fragment.position);
+    float direct_magnitude = direct * pow(max(dot(fragment_direction, -light_direction), 0), direct_exp);
     current_color += direct_magnitude * light_color;
 
 	FragColor = vec4(current_color, 1.0);
