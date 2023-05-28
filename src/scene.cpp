@@ -219,9 +219,9 @@ void scene_structure::display_gui()
 		ImGui::SliderFloat("Specular", &environment.specular, 0.0f, 1.0f);
 		ImGui::SliderInt("Specular Exp", &environment.specular_exp, 1, 255);
 
+		ImGui::Checkbox("Toggle Flashlight", &environment.flashlight_on);
 		ImGui::SliderFloat("Flashlight", &environment.flashlight, 0.0f, 10.0f);
 		ImGui::SliderInt("Flashlight Exp", &environment.flashlight_exp, 1, 255);
-		// ImGui::SliderFloat("Flashlight Dist", &environment.flashlight_dist, 1.0f, 100.0f);
 
 		// Now Hard coded
 		ImGui::SliderFloat("Direct", &environment.direct, 0.0f, 10.0f);

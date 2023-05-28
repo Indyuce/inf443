@@ -43,6 +43,7 @@ void environment_structure::send_opengl_uniform(opengl_shader_structure const& s
 	// environment.uniform_generic.uniform_float["attenuation_distance"] = environment.attenuation_distance;
 
 	// Player flashlight
+	opengl_uniform(shader, "flashlight_on", flashlight_on, expected);
 	opengl_uniform(shader, "flashlight", flashlight, expected);
 	opengl_uniform(shader, "flashlight_exp", flashlight_exp, expected);
 	opengl_uniform(shader, "flashlight_exp", flashlight_exp, expected);

@@ -31,9 +31,9 @@ uniform float diffuse;
 uniform float specular;
 uniform int specular_exp;
 
+uniform bool flashlight_on;
 uniform float flashlight;
 uniform int flashlight_exp;
-uniform float flashlight_dist;
 uniform vec3 flashlight_color;
 
 uniform vec3 light_color;
@@ -107,7 +107,9 @@ void main()
     
     // Flashlight. Diffuse and specular are the same, because the light source is also the observer
     // Both effects are wrapped up inside of the 'flashlight' coefficient
-    float flashlight_magnitude = flashlight * pow(max(dot(Cn, camera_direction), 0), flashlight_exp) * max(0, dot(N, Cn));
+    float flashlight_magnitude = 0;
+    if (flashlight_on)
+        flashlight_magnitude = flashlight * pow(max(dot(Cn, camera_direction), 0), flashlight_exp) * max(0, dot(N, Cn));
 
     // Calculate color
     current_color += ((ambiant + diffuse_magnitude) * fragment_color + specular_magnitude) * eff_light_color + flashlight_magnitude * material.color;

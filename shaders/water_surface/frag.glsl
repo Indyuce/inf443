@@ -96,15 +96,16 @@ void main()
     // ABOVE SURFACE LEVEL
     else {
         eta = 1.0f / eta;
-        // TODO linear absorbance
-        // attenuation_distance = floor_level / abs(fragment.position.z);
+        // TODO color attenuation (abs(floor_level / fragment.position.z) ?)
         attenuation_distance = 0;
-        vec3 texture_coords = refract(I, N, eta);
-        current_color = texture(texture_sand, reflect(I, N).xy).xyz;
 
-
-
-
+        // Partial reflection
+        // Water reflects at normal angles and refracts more at steep angles
+        float angle_steepness = max(0, dot(vec3(0, 0, 1), -I));
+        
+        vec3 refracted_color = texture(texture_sand, refract(I, N, eta).xy).xyz;
+        vec3 reflected_color = texture(image_skybox, reflect(I, N)).xyz;
+        current_color = mix(refracted_color, reflected_color, 1 - angle_steepness);
     }
 
     // Color attenuation
