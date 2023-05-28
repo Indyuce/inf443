@@ -38,9 +38,9 @@ struct implicit_surface_structure
 	implicit_surface_data data_param;
 	implicit_surface_drawable_structure drawable_param;
 	implicit_surface_field_structure field_param;
-	opengl_shader_structure* p_shader;
 
-	void set_shader(opengl_shader_structure* p_shader_);
+	opengl_shader_structure shader;
+	float floor_level;
 
 	// Helpers functions that should be called in the scene
 	// *************************************************** //

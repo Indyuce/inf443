@@ -28,7 +28,7 @@ uniform material_structure material;
 uniform float ambiant;
 uniform float diffuse;
 uniform float specular;
-uniform int specularExp;
+uniform int specular_exp;
 
 uniform float flashlight;
 uniform int flashlight_exp;
@@ -39,9 +39,10 @@ uniform vec3 light_color;
 uniform vec3 light_direction;
 
 uniform vec3 fog_color;
-uniform float fog_distance;
-// uniform float attenuation_distance;
 uniform bool surf_height;
+uniform float floor_level;
+uniform float scale;
+uniform float water_attenuation_coefficient;
 
 struct gerstner_wave {
     vec2 direction;
@@ -78,8 +79,7 @@ void main()
         attenuation_distance = length(fragment.position - camera_position);
 
 	} else {
-        // float water_height = 7.0f;
-        // attenuation_distance = water_height / abs(fragment.position.z);
+        // attenuation_distance = floor_level / abs(fragment.position.z);
         attenuation_distance = 0;
     }
 
@@ -93,11 +93,8 @@ void main()
     current_color = mapped_color;
 
     // Color attenuation
-    vec3 water_color = vec3(0.016,0.659,0.878); // TODO ?
-    float alpha = 0.12f; // Water attenuation coefficient at 350nm
-    float scale = .05f; // Scale correction coefficient
-    float attenuation = exp(-alpha * scale * attenuation_distance);
-    current_color = current_color * attenuation + (1 - attenuation) * water_color;
+    float attenuation = exp(-water_attenuation_coefficient * scale * attenuation_distance);
+    current_color = current_color * attenuation + (1 - attenuation) * fog_color;
    
     // Specular sunlight
     // TODO

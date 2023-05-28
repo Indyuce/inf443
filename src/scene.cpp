@@ -1,15 +1,14 @@
 
 
 #include "scene.hpp"
-#include "animation.hpp"
 #include <random>
 
 using namespace cgp;
 
 scene_structure::scene_structure() {
 	num_fishes = 0;
-	dt = 0.05;
-	t = 0;
+	dt = 0.05f;
+	t = 0.0f;
 }
 
 // This function is called only once at the beginning of the program
@@ -47,8 +46,10 @@ void scene_structure::initialize()
 		project::path + "shaders/terrain/vert.glsl",
 		project::path + "shaders/terrain/frag.glsl");
 
-	implicit_surface.set_shader(&environment.shader);
-	implicit_surface.set_domain(environment.domain.samples, environment.domain.length);
+	field_function.floor_level = environment.floor_level;
+	implicit_surface.floor_level = environment.floor_level;
+	implicit_surface.shader = environment.shader;
+	implicit_surface.set_domain(environment.domain.resolution, environment.domain.length);
 	implicit_surface.update_field(field_function, environment.isovalue);
 	implicit_surface.drawable_param.shape.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Basecolor.png");
 	implicit_surface.drawable_param.shape.supplementary_texture["normal_map"].load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture/sand_underwater/Base_Normal.png");
@@ -59,6 +60,7 @@ void scene_structure::initialize()
 	// ***************************************** //
 	const float l = terrain::XY_LENGTH;
 	//water_surface.initialize_data_on_gpu(mesh_primitive_torus(100.0f, 20.0f));
+	// 3 = TRADEOFF BTW PERFORMANCE AND VISUALS
 	water_surface.initialize_data_on_gpu(mesh_primitive_grid({ -l, -l, 0 }, { l, -l, 0 }, { l, l, 0 }, { -l, l, 0 }, terrain::XY_SAMPLES * 3, terrain::XY_SAMPLES * 3));
 	water_surface.shader.load(
 		project::path + "shaders/water_surface/vert.glsl",
@@ -111,46 +113,31 @@ void scene_structure::initialize()
 
 float const MOVE_SPEED = .5f;
 
-/// <summary>
-/// Angle of light relative to horizon. Light is not modeled by a position
-/// but rather by a direction as light from the sun is supposed to be infinitely
-/// far away. This means all light rays have approximately the same direction.
-/// Shaders directly use light direction instead of position.
-/// </summary>
-float const LIGHT_ANGLE = 60;
-
-vec3 compute_direction(const float& azimut, const float& polar) {
-	const float azimut_rad = azimut * Pi / 180.0f;
-	const float polar_rad = polar * Pi / 180.0f;
-	return vec3(cos(azimut_rad) * sin(polar_rad), sin(azimut_rad) * sin(polar_rad), cos(polar_rad));
-}
-
-vec3 compute_direction(vec2& dir) {
-	return compute_direction(dir.x, dir.y);
-}
-
 // This function is called permanently at every new frame
 // Note that you should avoid having costly computation and large allocation defined there. This function is mostly used to call the draw() functions on pre-existing data.
 void scene_structure::display_frame()
 {
 
 	// Draw skybox
-	//  Must be called before drawing the other shapes and without writing in the Depth Buffer
+	// Must be called before drawing the other shapes and without writing in the Depth Buffer
+	// ***************************************** //
 	glDepthMask(GL_FALSE); // disable depth-buffer writing
 	draw(skybox, environment);
 	glDepthMask(GL_TRUE);  // re-activate depth-buffer write
 
 	// Increment time
+	// ***************************************** //
 	t += dt;
 	if (num_fishes > 0)
 		fish_manager.refresh(field_function);
 
 	// Draw fishes
+	// ***************************************** //
 	for (int i = 0;i < fish_manager.fishes.size();i++) {
 		fish fish = fish_manager.fishes[i];
 		
-		rotation_transform horiz_transformation = cgp::rotation_transform::from_axis_angle({ 0,0,1 }, 3.14159 / 2);
-		rotation_transform X_transformation = cgp::rotation_transform::from_axis_angle({ 1,0,0 }, 3.14159 / 2);
+		rotation_transform horiz_transformation = cgp::rotation_transform::from_axis_angle({ 0,0,1 }, 3.14159f / 2.0f);
+		rotation_transform X_transformation = cgp::rotation_transform::from_axis_angle({ 1,0,0 }, 3.14159f / 2.0f);
 		//boid.model.rotation = cgp::rotation_transform::from_vector_transform({ 0,0,1 }, boid_direction[i])*;
 		//fish.model.model.rotation = cgp::rotation_transform::from_axis_angle(fish.direction, 3.14159 / 2) * cgp::rotation_transform::from_vector_transform({ 0,0,1 }, fish.direction);
 		fish.model.model.rotation = cgp::rotation_transform::from_vector_transform({ 0,0,1 }, fish.direction);
@@ -164,9 +151,11 @@ void scene_structure::display_frame()
 	}
 
 	// Update time
+	// ***************************************** //
 	timer.update();
 
 	// Move player
+	// ***************************************** //
 	if (camera_control.inputs->keyboard.is_pressed(GLFW_KEY_W))
 		camera_control.camera_model.manipulator_translate_front(-MOVE_SPEED);
 	else if (camera_control.inputs->keyboard.is_pressed(GLFW_KEY_S))
@@ -182,30 +171,28 @@ void scene_structure::display_frame()
 	else if (camera_control.inputs->keyboard.shift)
 		camera_control.camera_model.manipulator_translate_in_plane(vec2(0, MOVE_SPEED));
 
-	// Send uniforms
-	environment.uniform_generic.uniform_float["ambiant"] = environment.ambiant;
-	environment.uniform_generic.uniform_float["diffuse"] = environment.diffuse;
-	environment.uniform_generic.uniform_float["specular"] = environment.specular;
-	environment.uniform_generic.uniform_float["direct"] = environment.direct;
-	environment.uniform_generic.uniform_int["direct_exp"] = environment.direct_exp;
-	environment.uniform_generic.uniform_vec3["light_color"] = environment.light_color;
+	// Uniforms
+	// ***************************************** //
 
-	environment.uniform_generic.uniform_float["flashlight"] = environment.flashlight;
-	environment.uniform_generic.uniform_int["flashlight_exp"] = environment.flashlight_exp;
-
-	environment.uniform_generic.uniform_vec3["light_direction"] = compute_direction(environment.light_direction);
-	environment.uniform_generic.uniform_int["specularExp"] = environment.specular_exp;
-	environment.uniform_generic.uniform_vec3["fog_color"] = environment.background_color;
-	environment.uniform_generic.uniform_float["fog_distance"] = environment.fog_distance;
-	// environment.uniform_generic.uniform_float["attenuation_distance"] = environment.attenuation_distance;
+	// Time
 	environment.uniform_generic.uniform_float["time"] = t;
-	environment.uniform_generic.uniform_float["surf_height"] = environment.surf_height;
+
+	// Get camera location
+	vec3 const camera_position = environment.get_camera_position();
+	environment.uniform_generic.uniform_vec3["camera_position"] = camera_position;
+	environment.uniform_generic.uniform_int["underwater"] = camera_position.z < environment.get_water_level(camera_position, t);
+
+	// Get camera direction
+	vec3 camera_direction = vec3(environment.camera_view(2, 0), environment.camera_view(2, 1), environment.camera_view(2, 2));
+	environment.uniform_generic.uniform_vec3["camera_direction"] = camera_direction;
 
 	// Draw terrain
+	// ***************************************** //
 	draw(implicit_surface.drawable_param.domain_box, environment);
-	//draw(implicit_surface.drawable_param.shape, environment);
+	draw(implicit_surface.drawable_param.shape, environment);
 
 	// Draw water surface
+	// ***************************************** //
 	draw(water_surface, environment);
 }
 
@@ -234,8 +221,7 @@ void scene_structure::display_gui()
 		ImGui::SliderInt("Direct Exp", &environment.direct_exp, 1, 1000);
 
 		ImGui::ColorEdit3("Fog Color", &environment.background_color[0]);
-		ImGui::SliderFloat("Fog Distance", &environment.fog_distance, 100.0f, 1000.0f);
-		// ImGui::SliderFloat("Attenuation Distance", &environment.attenuation_distance, 100.0f, 1000.0f);
+		ImGui::SliderFloat("Attenuation Coef", &environment.water_attenuation_coefficient, 0.0f, 1.0f);
 
 		ImGui::Checkbox("Water Surface Height Shader", &environment.surf_height);
 	}

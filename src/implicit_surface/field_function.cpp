@@ -1,6 +1,21 @@
+#pragma once
+
 #include "field_function.hpp"
 
 using namespace cgp;
+
+perlin_noise_params::perlin_noise_params() {
+    persistency = 0.0f;
+    frequency_gain = 0.0f;
+    octave = 0.0f;
+    scale = 0.0f;
+    multiplier = 0.0f;
+    offset = 0.0f;
+
+    direction = vec2(0.0f, 0.0f);
+    speed = 0.0f;
+    normal_boost = 0.0f;
+}
 
 perlin_noise_params::perlin_noise_params(float persistency_, float frequency_gain_, int octave_, float scale_, float multiplier_, float offset_) {
     persistency = persistency_;
@@ -9,17 +24,24 @@ perlin_noise_params::perlin_noise_params(float persistency_, float frequency_gai
     scale = scale_;
     multiplier = multiplier_;
     offset = offset_;
+
+    direction = vec2(0.0f, 0.0f);
+    speed = 0.0f;
+    normal_boost = 0.0f;
 }
 
-perlin_noise_params::perlin_noise_params() {
-    persistency = 0.0f;
-    frequency_gain = 0.0f;
-    octave = 0;
-    scale = 0.0f;
-    scale = 0.0f;
+perlin_noise_params::perlin_noise_params(float persistency_, float frequency_gain_, int octave_, float scale_, float multiplier_, vec2& direction_, float speed_, float normal_boost_) {
+    persistency = persistency_;
+    frequency_gain = frequency_gain_;
+    octave = octave_;
+    scale = scale_;
+    multiplier = multiplier_;
     offset = 0.0f;
-}
 
+    direction = direction_;
+    speed = speed_;
+    normal_boost = normal_boost_;
+}
 
 float perlin_noise_params::compute(const cgp::vec3& pos) const {
     return noise_perlin({ pos.x * scale, pos.y * scale, pos.z * scale }, octave, persistency, frequency_gain) * multiplier - offset;
@@ -29,12 +51,17 @@ float perlin_noise_params::compute(const cgp::vec2& pos) const {
     return noise_perlin({ pos.x * scale, pos.y * scale }, octave, persistency, frequency_gain) * multiplier - offset;
 }
 
+float perlin_noise_params::compute(cgp::vec2 const& pos, float time) const
+{
+    return noise_perlin({ pos.x * scale, pos.y * scale }, octave, persistency, frequency_gain) * multiplier - offset;
+}
+
 field_function_structure::field_function_structure() {
-    floor_att_dist = 10.0f;
+    floor_att_dist = 6.0f;
     cave_height_1 = 30.0f;
     cave_height_max = cave_height_1 * 2.0f;
 
-    floor_perlin = perlin_noise_params(0.3f, 2.0f, 2, .005f, 1.0f, .3f);
+    floor_perlin = perlin_noise_params(0.175f, 1.25f, 2, .005f, 0.188f * 12.1825, 0.0f);
     cave_perlin = perlin_noise_params(0.307f, 2.193f, 3, .015f, 5.47f, 4.6f);
     rock_color_perlin = perlin_noise_params(0.4f, 3.0f, 4, .05f, 1.0f, 0.0f);
     mossy_rocks_perlin = perlin_noise_params(0.4f, 3.0f, 2, .05f, 10.0f, 3.0f);
@@ -72,6 +99,7 @@ float mod(float x, float y) {
 }
 
 /// <summary>
+/// Unused at the moment. Volumetric color looks REALLY bad when not using a custom texture.
 /// Formula to compute terrain color at a specific location
 /// </summary>
 /// <param name="pos"></param>
@@ -111,15 +139,9 @@ float field_function_structure::operator()(cgp::vec3 const& pos) const
 {
     float pot = 0.0f;
 
-    const float x = pos.x;
-    const float y = pos.y;
-    const float MIN_Z = -25;
-    const float z = pos.z - MIN_Z; // <chunk height>/2
-    //std::cout << z << std::endl;
-
     // Bottom hills
-    float const floor_pot = noise_perlin({ x * floor_perlin.scale, y * floor_perlin.scale }, floor_perlin.octave, floor_perlin.persistency, floor_perlin.frequency_gain);
-    pot += floor_pot * floor_perlin.multiplier * exp(-z / floor_att_dist) - floor_perlin.offset;
+    float const floor_pot = floor_perlin.compute(vec2(pos.x, pos.y)) * exp(-(pos.z - floor_level) / floor_att_dist);
+    pot += floor_pot;
     
     /*
     // Add caves

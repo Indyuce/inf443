@@ -6,22 +6,6 @@
 
 using namespace cgp;
 
-struct perlin_noise_parameters
-{
-	float persistency;
-	float frequency_gain;
-	int octave;
-	float scale;
-	float multiplier;
-
-	perlin_noise_parameters(float persistency_, float frequency_gain_, int octave_, float scale_, float multiplier_) {
-		persistency = persistency_;
-		frequency_gain = frequency_gain_;
-		octave = octave_;
-		scale = scale_;
-		multiplier = multiplier_;
-	}
-};
 
 struct terrain
 {

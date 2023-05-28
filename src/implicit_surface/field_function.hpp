@@ -4,6 +4,12 @@
 
 struct perlin_noise_params
 {
+	perlin_noise_params();
+	
+	perlin_noise_params(float persistency_, float frequency_gain_, int octave_, float scale_, float multiplier_, float offset_);
+
+	perlin_noise_params(float persistency_, float frequency_gain_, int octave_, float scale_, float multiplier_, cgp::vec2& direction_, float speed_, float normal_boost_);
+
 	float persistency;
 	float frequency_gain;
 	int octave;
@@ -11,13 +17,16 @@ struct perlin_noise_params
 	float multiplier;
 	float offset;
 
-	perlin_noise_params(float persistency_, float frequency_gain_, int octave_, float scale_, float multiplier_, float offset_);
-
-	perlin_noise_params();
+	// When using perlin noise to generate waves
+	cgp::vec2 direction;
+	float speed;
+	float normal_boost;
 
 	float compute(cgp::vec3 const& pos) const;
 
 	float compute(cgp::vec2 const& pos) const;
+
+	float compute(cgp::vec2 const& pos, float time) const;
 };
 
 // Parametric function defined as a sum of blobs-like primitives
@@ -25,6 +34,7 @@ struct perlin_noise_params
 //   with noise: a Perlin noise
 // The operator()(vec3 p) allows to query a value of the function at arbitrary point in space
 struct field_function_structure {
+	float floor_level;
 
 	// Query color of terrain at any point p
 	cgp::vec3 color_at(cgp::vec3 const& pos) const;

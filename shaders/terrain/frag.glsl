@@ -29,7 +29,7 @@ uniform material_structure material;
 uniform float ambiant;
 uniform float diffuse;
 uniform float specular;
-uniform int specularExp;
+uniform int specular_exp;
 
 uniform float flashlight;
 uniform int flashlight_exp;
@@ -40,8 +40,8 @@ uniform vec3 light_color;
 uniform vec3 light_direction;
 
 uniform vec3 fog_color;
-uniform float fog_distance;
-// uniform float attenuation_distance;
+uniform float scale;
+uniform float water_attenuation_coefficient;
 
 void main()
 {
@@ -69,7 +69,7 @@ void main()
     float diffuse_magnitude = max(dot(N, -light_direction), 0.0) * diffuse;
 
     // Specular sunlight
-    float specular_magnitude = pow(max(dot(R, Cn), 0.0), specularExp) * specular;
+    float specular_magnitude = pow(max(dot(R, Cn), 0.0), specular_exp) * specular;
     
     // Flashlight. Diffuse and specular are the same, because the light source is also the observer
     // Both effects are wrapped up inside of the 'flashlight' coefficient
@@ -78,10 +78,10 @@ void main()
     // Calculate color
     current_color += ((ambiant + diffuse_magnitude) * fragment.color + specular_magnitude) * eff_light_color + flashlight_magnitude * material.color;
     
-    // Fog
-    float du = length(C);
-    float fog_coef = min(du / fog_distance, 1);
-    current_color = (1 - fog_coef) * current_color + fog_coef * fog_color;
+    // Water attenuation
+    float attenuation_distance = length(C);
+    float attenuation = exp(-water_attenuation_coefficient * scale * attenuation_distance);
+    current_color = current_color * attenuation + (1 - attenuation) * fog_color;
     
     FragColor = vec4(current_color, 1.0); // Note: the last alpha component is not used here
 }

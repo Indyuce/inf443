@@ -52,7 +52,7 @@ void fish_manager::refresh(field_function_structure field) {
 		fishes[i].direction += out_of_bound_force;
 		if(counter%10==0)
 			fishes[i].direction += {0.05 * (distrib(gen)-0.5), 0.05 * (distrib(gen) - 0.5), 0.05 * (distrib(gen) - 0.5)};
-		fishes[i].direction.z *= 0.99;
+		fishes[i].direction.z *= 0.99f;
 		fishes[i].direction = cgp::normalize(fishes[i].direction);
 		
 		fishes[i].position = fishes[i].position + (fish_speed * fishes[i].direction);
@@ -124,7 +124,7 @@ cgp::vec3 fish_manager::calculate_cohesion(int i) {
 
 cgp::vec3 fish_manager::calculate_out_of_bound_force(int i) {
 	vec3 position = fishes[i].position;
-	float out_of_bound_force = 0.04;
+	float out_of_bound_force = 0.04f;
 	float forceX = position.x > XY_LENGTH/2 ? -out_of_bound_force : position.x < -XY_LENGTH / 2 ? out_of_bound_force : 0;
 	float forceY = position.y > XY_LENGTH / 2 ? -out_of_bound_force : position.y < -XY_LENGTH / 2 ? out_of_bound_force : 0;
 	float forceZ = position.z > Z_LENGTH/2 ? -out_of_bound_force : position.z < -Z_LENGTH/2 ? out_of_bound_force : 0;
