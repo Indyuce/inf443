@@ -7,14 +7,14 @@ using namespace cgp;
 
 scene_structure::scene_structure() {
 	num_fishes = 0;
-	dt = 0.05f;
-	t = 0.0f;
 }
 
 // This function is called only once at the beginning of the program
 // This function can contain any complex operation that can be pre-computed once
 void scene_structure::initialize()
 {
+	timer.start();
+	timer.scale = 2.0f;
 
 	// Set the behavior of the camera and its initial position
 	// ********************************************** //
@@ -25,7 +25,7 @@ void scene_structure::initialize()
 
 	// Load skybox
 	// ***************************************** //
-	image_structure image_skybox_template = image_load_file("assets/skybox/skybox_01.jpg"); // hdr_01.png
+	image_structure image_skybox_template = image_load_file("assets/skybox/hdr_01.png"); // hdr_01.png OR skybox_01.jpg
 	std::vector<image_structure> image_grid = image_split_grid(image_skybox_template, 4, 3);
 	skybox.initialize_data_on_gpu();
 	skybox.texture.initialize_cubemap_on_gpu(
@@ -67,15 +67,13 @@ void scene_structure::initialize()
 
 	// Load water surface & shader
 	// ***************************************** //
-	const float l = terrain::XY_LENGTH;
-	//water_surface.initialize_data_on_gpu(mesh_primitive_torus(100.0f, 20.0f));
-	// 3 = TRADEOFF BTW PERFORMANCE AND VISUALS
-	water_surface.initialize_data_on_gpu(mesh_primitive_grid({ -l, -l, 0 }, { l, -l, 0 }, { l, l, 0 }, { -l, l, 0 }, terrain::XY_SAMPLES * 3, terrain::XY_SAMPLES * 3));
-	water_surface.shader.load(
+	water_surface.initialize_models();
+	opengl_shader_structure water_shader;
+	water_shader.load(
 		project::path + "shaders/water_surface/vert.glsl",
 		project::path + "shaders/water_surface/frag.glsl");
-	water_surface.supplementary_texture["image_skybox"] = skybox.texture;
-	water_surface.supplementary_texture["texture_sand"] = implicit_surface.drawable_param.shape.texture;
+	water_surface.set_shaders(water_shader);
+	water_surface.set_textures(implicit_surface.drawable_param.shape.texture, skybox.texture);
 
 	// Animation and models
 	// ***************************************** //
@@ -137,7 +135,6 @@ void scene_structure::display_frame()
 
 	// Increment time
 	// ***************************************** //
-	t += dt;
 	if (num_fishes > 0)
 		fish_manager.refresh(field_function);
 
@@ -185,12 +182,13 @@ void scene_structure::display_frame()
 	// ***************************************** //
 
 	// Time
-	environment.uniform_generic.uniform_float["time"] = t;
+	environment.uniform_generic.uniform_float["time"] = timer.t;
 
 	// Get camera location
 	vec3 const camera_position = environment.get_camera_position();
 	environment.uniform_generic.uniform_vec3["camera_position"] = camera_position;
-	environment.uniform_generic.uniform_int["under_water"] = camera_position.z < environment.get_water_level(camera_position, t);
+	environment.uniform_generic.uniform_float["water_surface_plane_length"] = water_surface.total_length;
+	environment.uniform_generic.uniform_float["water_surface_center_length"] = water_surface.center_length;
 
 	// Get camera direction
 	vec3 camera_direction = vec3(environment.camera_view(2, 0), environment.camera_view(2, 1), environment.camera_view(2, 2));
@@ -203,7 +201,12 @@ void scene_structure::display_frame()
 
 	// Draw water surface
 	// ***************************************** //
-	draw(water_surface, environment);
+	water_surface.update_positions(camera_position);
+	draw(water_surface.center, environment);
+	draw(water_surface.positive_x, environment);
+	draw(water_surface.negative_x, environment);
+	draw(water_surface.positive_y, environment);
+	draw(water_surface.negative_y, environment);
 }
 
 void scene_structure::display_gui()
@@ -229,12 +232,13 @@ void scene_structure::display_gui()
 		ImGui::SliderFloat("Direct", &environment.direct, 0.0f, 10.0f);
 		ImGui::SliderInt("Direct Exp", &environment.direct_exp, 1, 1000);
 
-		ImGui::ColorEdit3("Fog Color", &environment.background_color[0]);
-		ImGui::SliderFloat("Attenuation Coef", &environment.water_attenuation_coefficient, 0.0f, 1.0f);
+		ImGui::ColorEdit3("Water Color", &environment.background_color[0]);
+		ImGui::SliderFloat("Fog Distance", &environment.fog_distance, 500.0f, 5000.0f);
 
 		ImGui::Checkbox("Water Surface Height Shader", &environment.surf_height);
 		ImGui::SliderFloat("Water Optical Index", &environment.water_optical_index, 0.5f, 2.0f);
 		ImGui::SliderFloat("Terrain Ridges", &environment.terrain_ridges, 0.0f, 10.0f);
+		ImGui::SliderFloat("Color Attenuation Scale", &environment.scale, 0.001f, 0.1f);
 	}
 }
 

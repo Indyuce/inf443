@@ -10,7 +10,7 @@ namespace cgp
 		float field_of_view = 50.0f * Pi/180;
 		float aspect_ratio = 1.0f;
 		float depth_min = 0.01f;
-		float depth_max = 1000;
+		float depth_max = 10000.0f;
 
 		mat4 matrix() const;
 		mat4 matrix_inverse() const;

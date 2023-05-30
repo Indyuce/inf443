@@ -91,7 +91,7 @@ float noise_perlin(vec2 p, perlin_noise_params params)
     return value * params.mult;
 }
 
-perlin_noise_params small_sand_movement = perlin_noise_params(0.8f, 1.3f, 2, .02f, 0.3f, 0.3f);
+perlin_noise_params small_sand_movement = perlin_noise_params(0.8f, 1.3f, 2, .02f, 0.3f, 1.0f);
 
 void main()
 {

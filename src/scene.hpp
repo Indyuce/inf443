@@ -3,6 +3,7 @@
 #include "cgp/cgp.hpp"
 #include "environment.hpp"
 #include "animation.hpp"
+#include "water_surface.hpp"
 #include "implicit_surface/implicit_surface.hpp"
 
 // This definitions allow to use the structures: mesh, mesh_drawable, etc. without mentionning explicitly cgp::
@@ -38,14 +39,13 @@ struct scene_structure : cgp::scene_inputs_generic {
 	// Terrain
 	implicit_surface_structure implicit_surface; // Structures used for the implicit surface (*)
 	field_function_structure field_function;     // A Parametric function used to generate the discrete field (*)
-	mesh_drawable water_surface;                 // Mesh for water surface
+	water_surface_structure water_surface;        // Mesh for water surface
 
 	/**
 	 *  Fishes
 	*/
 	int num_fishes;
 	float dt;
-	float t;
 	
 	cgp::mesh_drawable fish0;
 	cgp::mesh_drawable fish1;

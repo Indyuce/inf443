@@ -50,17 +50,14 @@ uniform float ridge_coefficient;
 // This blends two normals by taking the second one and applying to
 // it the rotation corresponding to the first normal.
 // Ref https://www.shadertoy.com/view/4t2SzR
-vec3 blend_normals(vec3 n1, vec3 n2)
+vec3 NormalBlend_RNM(vec3 n1, vec3 n2)
 {
-    // Unpack
-	n1 = n1*2.0 - 1.0;
-    n2 = n2*2.0 - 1.0;
+    // Unpack (see article on why it's not just n*2-1)
+	n1 = n1*vec3( 2,  2, 2) + vec3(-1, -1,  0);
+    n2 = n2*vec3(-2, -2, 2) + vec3( 1,  1, -1);
     
-    mat3 nBasis = mat3(vec3(n1.z, n1.y, -n1.x), // +90 degree rotation around y axis
-        			   vec3(n1.x, n1.z, -n1.y), // -90 degree rotation around x axis
-        			   vec3(n1.x, n1.y,  n1.z));
-	
-    return normalize(n2.x*nBasis[0] + n2.y*nBasis[1] + n2.z*nBasis[2]);
+    // Blend
+    return normalize(n1*dot(n1, n2)/n1.z - n2);
 }
 
 void main()
@@ -75,9 +72,9 @@ void main()
 
     // Normal map
     /************************************************************/
-    vec3 fragment_normal = normalize(fragment.normal);
+    vec3 fragment_normal = vec3(0,0,1);
     vec3 map_normal      = texture(normal_map, uv_image).xyz * 2 - 1;
-    //vec3 N               = blend_normals(fragment_normal, map_normal);
+   // vec3 N               = NormalBlend_RNM(fragment_normal, map_normal);
     vec3 N = map_normal;
 
     // Useful vectors

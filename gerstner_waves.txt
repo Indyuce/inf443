@@ -1,0 +1,135 @@
+PROCEDURAL WAVE GENERATION
+
+if (waves_enabled) {
+
+    // Proceduraly generated wave parameters like Perlin noise
+    // TODO convert waves to object buffer
+    float angle_init = radians(25.0f);
+    float angle_diff = radians(157.45f);
+    float amplitude_init = 0.5f;
+    float amplitude_persistance = 0.6f;
+    float steepness_init = 0.1f;
+    float steepness_persistance = 1.6f;
+    float frequency_init = 0.1f;
+    float frequency_gain = 2.0f;
+    float speed_init = 0.5f;
+    float speed_gain = 1.3f;
+
+    for (int i = 0; i < gerstner_waves.length(); ++i) {
+        vec2 dir = vec2(cos(angle_init), sin(angle_init));
+        gerstner_waves[i] = gerstner_wave(dir, amplitude_init, steepness_init, frequency_init, speed_init);
+    
+        angle_init     += angle_diff;
+        amplitude_init *= amplitude_persistance;
+        steepness_init *= steepness_persistance;
+        frequency_init *= frequency_gain;
+        speed_init     *= speed_gain;
+    }
+}
+
+POSITION AND NORMAL GENERATION
+
+// Gerstner waves are a realistic modelisation of ocean waves. These
+// are superpositions of both vertical and horizontal oscillations,
+// handled by vertex shaders with reduced extra performance cost.
+//
+// References
+// - Methods adapted from https://github.com/CaffeineViking/osgw/blob/master/share/shaders/gerstner.glsl
+/***************************************************************************************************/
+
+struct gerstner_wave {
+    vec2 direction;
+    float amplitude;
+    float steepness;
+    float frequency;
+    float speed;
+};
+
+// List of waves
+bool waves_enabled = false;
+gerstner_wave gerstner_waves[3];
+
+vec3 gerstner_wave_position(vec3 position) {
+    vec3 wave_position = position.xyz;
+
+    // Big waves
+    if (waves_enabled)
+        for (int i = 0; i < gerstner_waves.length(); ++i) {
+            float proj = dot(position.xy, gerstner_waves[i].direction),
+                    phase = time * gerstner_waves[i].speed,
+                    theta = proj * gerstner_waves[i].frequency + phase,
+                    height = gerstner_waves[i].amplitude * sin(theta);
+
+            wave_position.z += height;
+
+            float maximum_width = gerstner_waves[i].steepness *
+                                    gerstner_waves[i].amplitude,
+                    width = maximum_width * cos(theta),
+                    x = gerstner_waves[i].direction.x,
+                    y = gerstner_waves[i].direction.y;
+
+            wave_position.x += x * width;
+            wave_position.y += y * width;
+        }
+
+    // Surface ridges
+    float ridge_noise = noise_perlin(position.xy, surface_ridges);
+    wave_position.z += ridge_noise;
+    
+    return wave_position;
+}
+
+mat3 rotation_matrix(vec3 axis, float angle) {
+    axis = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+    
+    return mat3(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s, 
+                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s, 
+                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c);
+}
+
+vec3 rotate(vec3 v, vec3 axis, float angle) {
+	return rotation_matrix(axis, angle) * v;
+}
+
+vec3 gerstner_wave_normal(vec3 position) {
+    vec3 wave_normal = vec3(0.0, 0.0, 1.0);
+    
+    // Big waves
+    if (waves_enabled)
+        for (int i = 0; i < gerstner_waves.length(); ++i) {
+            float proj = dot(position.xz, gerstner_waves[i].direction),
+                    phase = time * gerstner_waves[i].speed,
+                    psi = proj * gerstner_waves[i].frequency + phase,
+                    Af = gerstner_waves[i].amplitude *
+                        gerstner_waves[i].frequency,
+                    alpha = Af * sin(psi);
+
+            wave_normal.z -= gerstner_waves[i].steepness * alpha;
+
+            float x = gerstner_waves[i].direction.x,
+                    y = gerstner_waves[i].direction.y,
+                    omega = Af * cos(psi);
+
+            wave_normal.x -= x * omega;
+            wave_normal.y -= y * omega;
+        }
+
+    // Surface ridges. Only modify normals, vertices are not really required
+    float incr = .001;
+    vec2 pos   = position.xy;
+    vec2 dx    = vec2(incr, 0);
+    vec2 dy    = vec2(0, incr);
+    float dz_x = noise_perlin(pos + dx, surface_ridges) - noise_perlin(pos - dx, surface_ridges);
+    float dz_y = noise_perlin(pos + dy, surface_ridges) - noise_perlin(pos - dy, surface_ridges);
+    float angle_x = atan(dz_x, 2 * incr);
+    float angle_y = atan(dz_y, 2 * incr);
+    
+    // TODO optimizable
+    wave_normal = rotate(wave_normal, vec3(0, -1, 0), angle_x);
+    wave_normal = rotate(wave_normal, vec3(1, 0, 0), angle_y);
+    
+    return normalize(wave_normal);
+}

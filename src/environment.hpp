@@ -22,6 +22,7 @@ struct environment_structure : environment_generic_structure {
 	vec2 light_direction = { -115.7f, 156.9f }; // Matches the skybox
 	float water_attenuation_coefficient = .12f;
 	float water_reflection_coefficient = .5f; // How much water will reflect when standing above surface
+	float fog_distance = 3000.0f;
 
 	// Phong illumination
 	float ambiant = 0.3f;
@@ -60,8 +61,6 @@ struct environment_structure : environment_generic_structure {
 	vec3 get_camera_position() const;
 	
 	void send_opengl_uniform(opengl_shader_structure const& shader, bool expected = true) const override;
-
-	float get_water_level(vec3 const& position, float& time) const;
 };
 
 struct gerstner_wave {

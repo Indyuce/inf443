@@ -37,10 +37,10 @@ void environment_structure::send_opengl_uniform(opengl_shader_structure const& s
 	opengl_uniform(shader, "direct", direct, expected);
 	opengl_uniform(shader, "direct_exp", direct_exp, expected);
 
-	// Light 
+	// Light
 	opengl_uniform(shader, "light_color", light_color, expected);
 	opengl_uniform(shader, "light_direction", compute_direction(light_direction), expected);
-	// environment.uniform_generic.uniform_float["attenuation_distance"] = environment.attenuation_distance;
+	opengl_uniform(shader, "fog_distance", fog_distance, expected);
 
 	// Player flashlight
 	opengl_uniform(shader, "flashlight_on", flashlight_on, expected);
@@ -64,59 +64,4 @@ void environment_structure::send_opengl_uniform(opengl_shader_structure const& s
 
 	// Extra uniforms
 	uniform_generic.send_opengl_uniform(shader, false);
-}
-
-// CODE DUPLICATION
-static int const gerstner_waves_number = 3;
-static bool filled = false;
-static gerstner_wave gerstner_waves[gerstner_waves_number];
-static perlin_noise_params surface_ridges = perlin_noise_params(0.8f, 1.3f, 7, .02f, 1.0f, vec2(1, 1), 0.5f, 10.0f);
-
-// CODE DUPLICATION
-float environment_structure::get_water_level(vec3 const& position, float& time) const
-{
-	if (!filled) {
-		filled = true;
-		// Proceduraly generated wave parameters like Perlin noise
-		// TODO convert waves to object buffer to avoid code duplication
-		float angle_init = radians(25.0f);
-		float angle_diff = radians(157.45f);
-		float amplitude_init = 0.5f;
-		float amplitude_persistance = 0.6f;
-		float steepness_init = 0.1f;
-		float steepness_persistance = 1.6f;
-		float frequency_init = 0.1f;
-		float frequency_gain = 2.0f;
-		float speed_init = 0.5f;
-		float speed_gain = 1.3f;
-
-		for (int i = 0; i < gerstner_waves_number; ++i) {
-			vec2 dir = vec2(cos(angle_init), sin(angle_init));
-			gerstner_waves[i] = gerstner_wave(dir, amplitude_init, steepness_init, frequency_init, speed_init);
-
-			angle_init += angle_diff;
-			amplitude_init *= amplitude_persistance;
-			steepness_init *= steepness_persistance;
-			frequency_init *= frequency_gain;
-			speed_init *= speed_gain;
-		}
-	}
-	
-	float total_height = 0;
-	vec2 xy = vec2(position.x, position.y);
-
-	// Big waves
-	for (int i = 0; i < gerstner_waves_number; ++i) {
-		float proj = dot(xy, gerstner_waves[i].direction),
-			phase = time * gerstner_waves[i].speed,
-			theta = proj * gerstner_waves[i].frequency + phase,
-			height = gerstner_waves[i].amplitude * sin(theta);
-
-		total_height += height;
-	}
-
-	// Surface ridges
-	total_height += surface_ridges.compute(xy, time);
-
-	return total_height;
 }
