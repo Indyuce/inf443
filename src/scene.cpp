@@ -77,23 +77,22 @@ void scene_structure::initialize()
 
 	// Animation and models
 	// ***************************************** //
-	//initialize_models();
+	initialize_models();
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<> distrib(0, 1);
-	
-	//boid.initialize_data_on_gpu(create_cone_mesh(0.05, 0.1, 0));
-	
+
+
 	fish fish;
 	for (int i = 0;i < num_fishes;i++) {
-		fish.direction = { 2*distrib(gen)-1,2*distrib(gen)-1,2*distrib(gen)-1 };
-		do{
-			fish.position = { XY_LENGTH * (distrib(gen) - 0.5), XY_LENGTH * (distrib(gen) - 0.5), Z_LENGTH * (distrib(gen) - 0.5) };
-		} while (field_function(vec3(fish.position.x, fish.position.y, fish.position.z)) < -1);
+		fish.direction = { 2 * distrib(gen) - 1,2 * distrib(gen) - 1,2 * distrib(gen) - 1 };
+		do {
+			fish.position = { XY_LENGTH * 2 * (distrib(gen) - 0.5), XY_LENGTH * 2 * (distrib(gen) - 0.5), -Z_LENGTH * distrib(gen) };
+		} while (field_function(vec3(fish.position.x, fish.position.y, fish.position.z)) <= 0);
 
 		fish.speed = fish_manager.fish_speed;
-		fish.frequency = 4 + 2 * distrib(gen);
-		int random = std::rand()%5;
+		fish.frequency = 12 + 6 * distrib(gen);
+		int random = std::rand() % 5;
 		fish.modelId = random;
 		switch (random) {
 		case 0:
@@ -112,8 +111,29 @@ void scene_structure::initialize()
 			fish.model = fish4;
 			break;
 		}
-		fish_manager.add(fish);
+		fish_manager.fishes.push_back(fish);
 	}
+
+
+	for (int i = 0;i < fish_manager.num_group;i++) {
+		float x = 200 * (distrib(gen) - 0.5);
+		float y = 200 * (distrib(gen) - 0.5);
+		vec3 group_position = { x,y,get_height(x,y)};
+		int number_group_algas = std::rand() % (fish_manager.max_alga_per_group - fish_manager.min_alga_per_group) + fish_manager.min_alga_per_group;
+		std::vector<alga> algas;
+		for (int i = 0;i < number_group_algas;i++) {
+			struct alga alga;
+			alga.position = group_position + 5*vec3{ 5 * distrib(gen) - 2.5,2 * distrib(gen) - 2.5,0 };
+			alga.amplitude = 0.5+0.3*distrib(gen);
+			alga.frequency = 8+3*distrib(gen);
+			alga.rotation = distrib(gen) * 2 * 3.14;
+			algas.push_back(alga);
+		}
+		struct alga_group group;
+		group.algas = algas;
+		fish_manager.alga_groups.push_back(group);
+	}
+	
 
 	// Remove warnings for unset uniforms
 	cgp_warning::max_warning = 0;
@@ -125,7 +145,6 @@ float const MOVE_SPEED = 3.0f;
 // Note that you should avoid having costly computation and large allocation defined there. This function is mostly used to call the draw() functions on pre-existing data.
 void scene_structure::display_frame()
 {
-
 	// Draw skybox
 	// Must be called before drawing the other shapes and without writing in the Depth Buffer
 	// ***************************************** //
@@ -136,7 +155,7 @@ void scene_structure::display_frame()
 	// Increment time
 	// ***************************************** //
 	if (num_fishes > 0)
-		fish_manager.refresh(field_function);
+		fish_manager.refresh(field_function,timer.t);
 
 	// Draw fishes
 	// ***************************************** //
@@ -145,9 +164,17 @@ void scene_structure::display_frame()
 		
 		rotation_transform horiz_transformation = cgp::rotation_transform::from_axis_angle({ 0,0,1 }, 3.14159f / 2.0f);
 		rotation_transform X_transformation = cgp::rotation_transform::from_axis_angle({ 1,0,0 }, 3.14159f / 2.0f);
+		double r= sqrt(fish.direction.x * fish.direction.x +fish.direction.y*fish.direction.y+ fish.direction.z * fish.direction.z);
+		double theta = acos(fish.direction.z / r);
+		double psi=atan(fish.direction.y/fish.direction.x);
+		if(fish.direction.x<0)
+			psi += 3.14159;
+		rotation_transform Y_transformation = cgp::rotation_transform::from_axis_angle({ 0,1,0 }, theta- 3.14159f / 2.0f );
+		rotation_transform Z_transformation = cgp::rotation_transform::from_axis_angle({ 0,0,1 }, psi);
 		//boid.model.rotation = cgp::rotation_transform::from_vector_transform({ 0,0,1 }, boid_direction[i])*;
 		//fish.model.model.rotation = cgp::rotation_transform::from_axis_angle(fish.direction, 3.14159 / 2) * cgp::rotation_transform::from_vector_transform({ 0,0,1 }, fish.direction);
-		fish.model.model.rotation = cgp::rotation_transform::from_vector_transform({ 0,0,1 }, fish.direction);
+		//fish.model.model.rotation = cgp::rotation_transform::from_vector_transform({ 0,0,1 }, fish.direction);
+		fish.model.model.rotation = Z_transformation * Y_transformation *horiz_transformation * X_transformation;
 		fish.model.model.translation = fish.position;
 		fish.model.material.color = { 1,1,1 };
 		//boid.material.color = boid_color[i];
@@ -156,6 +183,25 @@ void scene_structure::display_frame()
 		environment.uniform_generic.uniform_float["frequency"] = fish.frequency;
 		draw(fish.model, environment);
 	}
+
+	get_height(0, 0);
+	
+	//Draw algas
+	for (alga_group group : fish_manager.alga_groups) {
+		int counter = 0;
+		for (alga alga : group.algas) {
+			counter += 1;
+			float flow_angle = 2 * 3.14 * cgp::noise_perlin({ 0.01 * timer.t,0.01 * counter });
+			environment.uniform_generic.uniform_vec2["flow_dir"] = { cos(flow_angle),sin(flow_angle) };
+			alga_model.model.translation = alga.position + vec3{ 0,0,3.5 };
+			environment.uniform_generic.uniform_float["amplitude"] = alga.amplitude;
+			environment.uniform_generic.uniform_float["frequency"] = alga.frequency;
+			environment.uniform_generic.uniform_float["rotation"] = alga.rotation;
+			draw(alga_model, environment);
+		}
+	}
+
+
 
 	// Update time
 	// ***************************************** //
@@ -216,7 +262,7 @@ void scene_structure::display_gui()
 	implicit_surface.gui_update(environment, field_function);
 
 	if (ImGui::CollapsingHeader("Environment")) {
-
+		ImGui::SliderFloat("Offset", &environment.offset, 0, 10);
 		ImGui::ColorEdit3("Light Color", &environment.light_color[0]);
 		ImGui::SliderFloat2("Light Azimut/Polar", &environment.light_direction[0], -180, 180);
 
@@ -240,6 +286,16 @@ void scene_structure::display_gui()
 		ImGui::SliderFloat("Terrain Ridges", &environment.terrain_ridges, 0.0f, 10.0f);
 		ImGui::SliderFloat("Color Attenuation Scale", &environment.scale, 0.001f, 0.1f);
 	}
+}
+
+float scene_structure::get_height(float x, float y) {
+	float step = 0.1;
+	float z = 0;
+	while (field_function(vec3{ x, y, z }) <= environment.isovalue) {
+		z -= step;
+	}
+	std::cout << z << std::endl;
+	return z;
 }
 
 void scene_structure::initialize_models() {
@@ -290,6 +346,7 @@ void scene_structure::initialize_models() {
 	fish3.model.scaling = 0.5f;
 	fish4.model.scaling = 4.0f;
 	
+
 	//boid.model.scaling = 0.1f;  //0.04F
 	jellyfish.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/jellyfish/Jellyfish_001.obj"));
 	jellyfish.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/jellyfish/Jellyfish_001_tex.png");
@@ -300,13 +357,15 @@ void scene_structure::initialize_models() {
 	jellyfish.shader = jellyfish_shader;
 
 
-	alga.initialize_data_on_gpu(mesh_load_file_obj(project::path + "assets/alga/alga.obj"));
-	alga.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/alga/alga.jpeg");
+	alga_model.initialize_data_on_gpu(mesh_load_file_obj(project::path + "assets/alga/alga.obj"));
+	alga_model.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/alga/alga.jpeg");
 	opengl_shader_structure alga_shader;
 	alga_shader.load(
 		project::path + "shaders/alga/vert.glsl",
 		project::path + "shaders/alga/frag.glsl");
-	alga.shader = alga_shader;
+	alga_model.shader = alga_shader;
+	alga_model.model.scaling = 4.0f;
+	alga_model.material.color = { 1,1,1 };
 }
 
 void scene_structure::mouse_move_event()

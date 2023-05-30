@@ -45,7 +45,6 @@ struct scene_structure : cgp::scene_inputs_generic {
 	 *  Fishes
 	*/
 	int num_fishes;
-	float dt;
 	
 	cgp::mesh_drawable fish0;
 	cgp::mesh_drawable fish1;
@@ -53,7 +52,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 	cgp::mesh_drawable fish3;
 	cgp::mesh_drawable fish4;
 	cgp::mesh_drawable jellyfish;
-	cgp::mesh_drawable alga;
+	cgp::mesh_drawable alga_model;
 
 	fish_manager fish_manager;
 
@@ -67,7 +66,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 	void display_frame(); // The frame display to be called within the animation loop
 	void display_gui();   // The display of the GUI, also called within the animation loop
 	void initialize_models(); // Initialize the models of the fishes.
-
+	float get_height(float x,float y); //Computes the height at a given x and y.
 
 	void mouse_move_event();
 	void mouse_click_event();

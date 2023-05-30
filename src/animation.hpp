@@ -16,6 +16,8 @@ struct fish {
 struct alga {
 	cgp::vec3 position;
 	float amplitude;
+	float frequency;
+	float rotation;
 };
 
 struct alga_group {
@@ -25,10 +27,10 @@ struct alga_group {
 
 struct fish_manager {
 	fish_manager();
-	void add(fish fish);
-	void refresh(field_function_structure field);
+	void refresh(field_function_structure field,float t);
 	std::vector<fish> fishes;
 	std::vector<alga_group> alga_groups;
+	int num_group,min_alga_per_group,max_alga_per_group;
 	float separation_coef, alignement_coef, cohesion_coef,fish_radius,fish_speed,obstacle_radius,obstacle_coef;
 	cgp::vec3 calculate_separation(int i);
 	cgp::vec3 calculate_alignement(int i);
