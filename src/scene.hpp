@@ -35,6 +35,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 
 	// Skybox
 	cgp::skybox_drawable skybox;
+	cgp::skybox_drawable underwater_skybox;
 
 	// Terrain
 	implicit_surface_structure implicit_surface; // Structures used for the implicit surface (*)

@@ -10,6 +10,9 @@ struct environment_structure : environment_generic_structure {
 	// Water
 	float water_level = 0.0f;
 	float floor_level = -200.0f;
+	vec3 fog_color1 = { 0.4f, 0.7f, 0.9f };
+	vec3 fog_color2 = { 0.2f, 0.4f, 0.8f };
+	vec3 fog_color3 = { 0.1f, 0.2f, 0.7f };
 	vec3 fog_color = { 0.016f, 0.659f, 0.878f }; // Used in the main program
 	vec3& background_color = fog_color; // Used in the main program
 	bool surf_height; // Boolean to enable height-based water shading

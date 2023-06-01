@@ -13,7 +13,9 @@ uniform float direct;
 uniform int direct_exp;
 uniform float water_surface_plane_length;
 
-uniform vec3 fog_color;
+uniform vec3 fog_color1;
+uniform vec3 fog_color2;
+uniform vec3 fog_color3;
 uniform vec3 light_color;
 uniform vec3 light_direction;
 uniform vec3 camera_position;
@@ -25,10 +27,15 @@ void main()
     vec3 current_color = vec3(texture(image_skybox, fragment.position));
 
     // Underwater
-    bool under_water = camera_position.z < 5f;
+    bool under_water = camera_position.z < 5.0f;
     /***********************************************************/
+    //Tres tres bresom  le fonctionnement de la skybox !! 
+    float theta = 4*fragment.position.z;
+    
+    
+    //Fog color3 for deep seas and fog color2 for shallow one
     if (under_water) {
-        current_color = fog_color;
+        current_color = cos(theta)* cos(theta)*fog_color2 + sin(theta) * sin(theta) *fog_color3;
     }
     
     // Over Water Surface

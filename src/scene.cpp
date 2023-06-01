@@ -6,7 +6,7 @@
 using namespace cgp;
 
 scene_structure::scene_structure() {
-	num_fishes = 0;
+	num_fishes = 80;
 }
 
 // This function is called only once at the beginning of the program
@@ -14,7 +14,7 @@ scene_structure::scene_structure() {
 void scene_structure::initialize()
 {
 	timer.start();
-	timer.scale = 2.0f;
+	timer.scale = 0.5f;
 
 	// Set the behavior of the camera and its initial position
 	// ********************************************** //
@@ -39,6 +39,8 @@ void scene_structure::initialize()
 	skybox.shader.load(
 		project::path + "shaders/skybox/vert.glsl",
 		project::path + "shaders/skybox/frag.glsl");
+
+
 
 	// Load terrain + shader
 	// ***************************************** //
@@ -149,7 +151,12 @@ void scene_structure::display_frame()
 	// Must be called before drawing the other shapes and without writing in the Depth Buffer
 	// ***************************************** //
 	glDepthMask(GL_FALSE); // disable depth-buffer writing
+	
 	draw(skybox, environment);
+	
+	//else
+	//	draw(underwater_skybox, environment);
+
 	glDepthMask(GL_TRUE);  // re-activate depth-buffer write
 
 	// Increment time
@@ -283,6 +290,7 @@ void scene_structure::display_gui()
 
 		ImGui::Checkbox("Water Surface Height Shader", &environment.surf_height);
 		ImGui::SliderFloat("Water Optical Index", &environment.water_optical_index, 0.5f, 2.0f);
+
 		ImGui::SliderFloat("Terrain Ridges", &environment.terrain_ridges, 0.0f, 10.0f);
 		ImGui::SliderFloat("Color Attenuation Scale", &environment.scale, 0.001f, 0.1f);
 	}
@@ -294,7 +302,6 @@ float scene_structure::get_height(float x, float y) {
 	while (field_function(vec3{ x, y, z }) <= environment.isovalue) {
 		z -= step;
 	}
-	std::cout << z << std::endl;
 	return z;
 }
 
