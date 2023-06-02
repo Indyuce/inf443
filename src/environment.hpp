@@ -10,9 +10,6 @@ struct environment_structure : environment_generic_structure {
 	// Water
 	float water_level = 0.0f;
 	float floor_level = -200.0f;
-	vec3 fog_color1 = { 0.4f, 0.7f, 0.9f };
-	vec3 fog_color2 = { 0.2f, 0.4f, 0.8f };
-	vec3 fog_color3 = { 0.1f, 0.2f, 0.7f };
 	vec3 fog_color = { 0.016f, 0.659f, 0.878f }; // Used in the main program
 	vec3& background_color = fog_color; // Used in the main program
 	bool surf_height; // Boolean to enable height-based water shading
@@ -26,12 +23,6 @@ struct environment_structure : environment_generic_structure {
 	float water_attenuation_coefficient = .12f;
 	float water_reflection_coefficient = .5f; // How much water will reflect when standing above surface
 	float fog_distance = 3000.0f;
-
-	// Phong illumination
-	float ambiant = 0.3f;
-	float diffuse = 0.8f;
-	float specular = 0.03f;
-	int specular_exp = 2;
 
 	// Direct illumination
 	float direct = 1.6f;

@@ -13,9 +13,7 @@ uniform float direct;
 uniform int direct_exp;
 uniform float water_surface_plane_length;
 
-uniform vec3 fog_color1;
-uniform vec3 fog_color2;
-uniform vec3 fog_color3;
+uniform vec3 fog_color;
 uniform vec3 light_color;
 uniform vec3 light_direction;
 uniform vec3 camera_position;
@@ -35,7 +33,7 @@ void main()
     
     //Fog color3 for deep seas and fog color2 for shallow one
     if (under_water) {
-        current_color = cos(theta)* cos(theta)*fog_color2 + sin(theta) * sin(theta) *fog_color3;
+        current_color = fog_color;
     }
     
     // Over Water Surface

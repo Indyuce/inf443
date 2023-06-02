@@ -11,11 +11,14 @@ namespace cgp
 		float specular = 0.3f;
 		float specular_exponent = 64.0f;
 	};
+
 	struct texture_settings_parameters {
 		bool active = true;
+		bool use_normal_map = false;
 		bool inverse_v = true;
 		bool two_sided = false;
 	};
+
 	struct material_mesh_drawable_phong
 	{
 		vec3 color = vec3{ 1.0f,1.0f,1.0f };    // Global RGB-color of the object

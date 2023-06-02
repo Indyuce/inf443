@@ -27,12 +27,6 @@ vec3 compute_direction(vec2 const& dir) {
 void environment_structure::send_opengl_uniform(opengl_shader_structure const& shader, bool expected) const
 {
 
-	// Phong illumination
-	opengl_uniform(shader, "ambiant", ambiant, expected);
-	opengl_uniform(shader, "diffuse", diffuse, expected);
-	opengl_uniform(shader, "specular", specular, expected);
-	opengl_uniform(shader, "specular_exp", specular_exp, expected);
-
 	// Direct illumination
 	opengl_uniform(shader, "direct", direct, expected);
 	opengl_uniform(shader, "direct_exp", direct_exp, expected);
@@ -49,10 +43,7 @@ void environment_structure::send_opengl_uniform(opengl_shader_structure const& s
 	opengl_uniform(shader, "flashlight_exp", flashlight_exp, expected);
 
 	// Water & Attenuation
-	opengl_uniform(shader, "fog_color1", fog_color1, expected);
-	opengl_uniform(shader, "fog_color2", fog_color2, expected);
-	opengl_uniform(shader, "fog_color2", fog_color2, expected);
-
+	opengl_uniform(shader, "fog_color", fog_color, expected);
 	opengl_uniform(shader, "surf_height", surf_height, expected);
 	opengl_uniform(shader, "floor_level", floor_level, expected);
 	opengl_uniform(shader, "scale", scale, expected);

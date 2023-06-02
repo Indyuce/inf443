@@ -38,8 +38,7 @@ uniform vec3 flashlight_color;
 uniform vec3 light_color;
 uniform vec3 light_direction;
 
-uniform vec3 fog_color1;
-uniform vec3 fog_color2;
+uniform vec3 fog_color;
 uniform bool surf_height;
 uniform float floor_level;
 uniform float scale;
@@ -128,7 +127,7 @@ perlin_noise_params surface_ridges = perlin_noise_params(0.8f, 1.3f, 7, .02f, 1.
 // Water surface fragment shader
 /***************************************************************************************************/
 
-vec3 water_attenuation(vec3 current_color,vec3 fog_color, float attenuation_distance) {
+vec3 water_attenuation(vec3 current_color, float attenuation_distance) {
 
   return mix(fog_color, current_color, exp(-water_attenuation_coefficient * scale * attenuation_distance));
 }
@@ -154,8 +153,6 @@ vec3 get_wave_normal(vec3 position) {
 void main()
 {
     vec3 current_color = vec3(0, 0, 0);
-    float theta = asin(normalize(fragment.position - camera_position).z);
-    vec3 fog_color = cos(theta) * cos(theta) * fog_color2 + sin(theta) * sin(theta) * fog_color1;
 
     // Height map shader for debug
     /***********************************************************/
@@ -194,7 +191,7 @@ void main()
             vec3 reflected_dir = reflect(I, N);
             current_color = texture(texture_sand, reflected_dir.xy).xyz;
             float correction_coefficient = .2f;
-            current_color = water_attenuation(current_color,fog_color, abs(floor_level / reflected_dir.z) * correction_coefficient);
+            current_color = water_attenuation(current_color, abs(floor_level / reflected_dir.z) * correction_coefficient);
         }
 
         // Inside of Snell's window!!!
@@ -202,7 +199,7 @@ void main()
             current_color = texture(image_skybox, texture_coords).xyz;
 
         // Absorption
-        current_color = water_attenuation(current_color,fog_color, distance_to_water);
+        current_color = water_attenuation(current_color, distance_to_water);
 	}
     
     // Above Surface Level
@@ -242,7 +239,7 @@ void main()
             float total_distance    = distance_to_water * abs(floor_level - camera_position.z) / abs(camera_position.z - fragment.position.z);
             vec2 projected          = refracted_dir.xy * total_distance; // Refrac ted direction projected onto expected 
             vec3 refracted_color    = texture(texture_sand, (camera_position.xy + projected) * sand_texture_scale).xyz;
-            refracted_color         = water_attenuation(refracted_color,fog_color, total_distance - distance_to_water); // Atenuation
+            refracted_color         = water_attenuation(refracted_color, total_distance - distance_to_water); // Atenuation
 
             // Reflection (no attenuation)
             vec3 reflected_color    = texture(image_skybox, reflect(I, N)).xyz;

@@ -14,7 +14,7 @@ scene_structure::scene_structure() {
 void scene_structure::initialize()
 {
 	timer.start();
-	timer.scale = 0.5f;
+	timer.scale = 1.5f;
 
 	// Set the behavior of the camera and its initial position
 	// ********************************************** //
@@ -25,7 +25,7 @@ void scene_structure::initialize()
 
 	// Load skybox
 	// ***************************************** //
-	image_structure image_skybox_template = image_load_file("assets/skybox/hdr_01.png"); // hdr_01.png OR skybox_01.jpg
+	image_structure image_skybox_template = image_load_file("assets/skybox/skybox_01.jpg"); // hdr_01.png OR skybox_01.jpg
 	std::vector<image_structure> image_grid = image_split_grid(image_skybox_template, 4, 3);
 	skybox.initialize_data_on_gpu();
 	skybox.texture.initialize_cubemap_on_gpu(
@@ -39,8 +39,6 @@ void scene_structure::initialize()
 	skybox.shader.load(
 		project::path + "shaders/skybox/vert.glsl",
 		project::path + "shaders/skybox/frag.glsl");
-
-
 
 	// Load terrain + shader
 	// ***************************************** //
@@ -65,6 +63,11 @@ void scene_structure::initialize()
 		project::path + "assets/texture/cartoon_sand/Base_height.png",
 		GL_REPEAT,
 		GL_REPEAT);
+	implicit_surface.drawable_param.shape.material.texture_settings.use_normal_map = true;
+	implicit_surface.drawable_param.shape.material.phong.ambient = .3f;
+	implicit_surface.drawable_param.shape.material.phong.diffuse = .8f;
+	implicit_surface.drawable_param.shape.material.phong.specular = .03f;
+	implicit_surface.drawable_param.shape.material.phong.specular_exponent = 2;
 	//drawable_chunk = terrain_gen.generate_chunk_data(0, 0, shader_custom);
 
 	// Load water surface & shader
@@ -83,7 +86,6 @@ void scene_structure::initialize()
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<> distrib(0, 1);
-
 
 	fish fish;
 	for (int i = 0;i < num_fishes;i++) {
@@ -115,7 +117,6 @@ void scene_structure::initialize()
 		}
 		fish_manager.fishes.push_back(fish);
 	}
-
 
 	for (int i = 0;i < fish_manager.num_group;i++) {
 		float x = 200 * (distrib(gen) - 0.5);
@@ -183,17 +184,15 @@ void scene_structure::display_frame()
 		//fish.model.model.rotation = cgp::rotation_transform::from_vector_transform({ 0,0,1 }, fish.direction);
 		fish.model.model.rotation = Z_transformation * Y_transformation *horiz_transformation * X_transformation;
 		fish.model.model.translation = fish.position;
-		fish.model.material.color = { 1,1,1 };
 		//boid.material.color = boid_color[i];
 		environment.uniform_generic.uniform_vec3["head_position"] = fish.position;
 		environment.uniform_generic.uniform_vec3["direction"] = fish.direction;
 		environment.uniform_generic.uniform_float["frequency"] = fish.frequency;
 		draw(fish.model, environment);
 	}
-
-	get_height(0, 0);
 	
-	//Draw algas
+	// Draw algas
+	// ***************************************** //
 	for (alga_group group : fish_manager.alga_groups) {
 		int counter = 0;
 		for (alga alga : group.algas) {
@@ -207,8 +206,6 @@ void scene_structure::display_frame()
 			draw(alga_model, environment);
 		}
 	}
-
-
 
 	// Update time
 	// ***************************************** //
@@ -273,11 +270,6 @@ void scene_structure::display_gui()
 		ImGui::ColorEdit3("Light Color", &environment.light_color[0]);
 		ImGui::SliderFloat2("Light Azimut/Polar", &environment.light_direction[0], -180, 180);
 
-		ImGui::SliderFloat("Ambiant", &environment.ambiant, 0.0f, 1.0f);
-		ImGui::SliderFloat("Diffuse", &environment.diffuse, 0.0f, 1.0f);
-		ImGui::SliderFloat("Specular", &environment.specular, 0.0f, 1.0f);
-		ImGui::SliderInt("Specular Exp", &environment.specular_exp, 1, 255);
-
 		ImGui::Checkbox("Toggle Flashlight", &environment.flashlight_on);
 		ImGui::SliderFloat("Flashlight", &environment.flashlight, 0.0f, 10.0f);
 		ImGui::SliderInt("Flashlight Exp", &environment.flashlight_exp, 1, 255);
@@ -311,56 +303,53 @@ void scene_structure::initialize_models() {
 	opengl_shader_structure fish0_shader;
 	fish0_shader.load(
 		project::path + "shaders/fish0/vert.glsl",
-		project::path + "shaders/fish0/frag.glsl");
+		project::path + "shaders/terrain/frag.glsl");
 	fish0.shader = fish0_shader;
+	fish0.model.scaling = 1.5f;
 
 	fish1.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/fish1/fish1.obj"));
 	fish1.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/fish1/fish1.png");
 	opengl_shader_structure fish1_shader;
 	fish1_shader.load(
 		project::path + "shaders/fish1/vert.glsl",
-		project::path + "shaders/fish1/frag.glsl");
+		project::path + "shaders/terrain/frag.glsl");
 	fish1.shader = fish1_shader;
+	fish1.model.scaling = 1.5f;
 
 	fish2.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/fish2/fish2.obj"));
 	fish2.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/fish2/fish2.jpeg");
 	opengl_shader_structure fish2_shader;
 	fish2_shader.load(
 		project::path + "shaders/fish2/vert.glsl",
-		project::path + "shaders/fish2/frag.glsl");
+		project::path + "shaders/terrain/frag.glsl");
 	fish2.shader = fish2_shader;
+	fish2.model.scaling = 3.0f;
 
 	fish3.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/fish3/fish3.obj"));
 	fish3.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/fish3/fish3.png");
 	opengl_shader_structure fish3_shader;
 	fish3_shader.load(
 		project::path + "shaders/fish3/vert.glsl",
-		project::path + "shaders/fish3/frag.glsl");
+		project::path + "shaders/terrain/frag.glsl");
 	fish3.shader = fish3_shader;
-
+	fish3.model.scaling = 1.5f;
 
 	fish4.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/fish4/fish4.obj"));
 	fish4.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/fish4/fish4.jpeg");
 	opengl_shader_structure fish4_shader;
 	fish4_shader.load(
 		project::path + "shaders/fish4/vert.glsl",
-		project::path + "shaders/fish4/frag.glsl");
+		project::path + "shaders/terrain/frag.glsl");
 	fish4.shader = fish4_shader;
-
-	fish0.model.scaling = 0.5f;
-	fish1.model.scaling = 0.5f;
-	fish2.model.scaling = 1.0f;
-	fish3.model.scaling = 0.5f;
-	fish4.model.scaling = 4.0f;
+	fish4.model.scaling = 12.0f;
 	
-
 	//boid.model.scaling = 0.1f;  //0.04F
 	jellyfish.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/jellyfish/Jellyfish_001.obj"));
 	jellyfish.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/jellyfish/Jellyfish_001_tex.png");
 	opengl_shader_structure jellyfish_shader;
 	jellyfish_shader.load(
 		project::path + "shaders/jellyfish/vert.glsl",
-		project::path + "shaders/jellyfish/frag.glsl");
+		project::path + "shaders/terrain/frag.glsl");
 	jellyfish.shader = jellyfish_shader;
 
 
@@ -369,10 +358,9 @@ void scene_structure::initialize_models() {
 	opengl_shader_structure alga_shader;
 	alga_shader.load(
 		project::path + "shaders/alga/vert.glsl",
-		project::path + "shaders/alga/frag.glsl");
+		project::path + "shaders/terrain/frag.glsl");
 	alga_model.shader = alga_shader;
 	alga_model.model.scaling = 4.0f;
-	alga_model.material.color = { 1,1,1 };
 }
 
 void scene_structure::mouse_move_event()

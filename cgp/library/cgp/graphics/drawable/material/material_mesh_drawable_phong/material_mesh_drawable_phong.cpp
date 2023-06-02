@@ -18,6 +18,7 @@ namespace cgp
 		opengl_uniform(shader, "material.phong.specular_exponent", phong.specular_exponent, expected);
 
 		opengl_uniform(shader, "material.texture_settings.use_texture", texture_settings.active, expected);
+		opengl_uniform(shader, "material.texture_settings.use_normal_map", texture_settings.use_normal_map, expected);
 		opengl_uniform(shader, "material.texture_settings.texture_inverse_v", texture_settings.inverse_v, expected);
 		opengl_uniform(shader, "material.texture_settings.two_sided", texture_settings.two_sided, expected);
 	}
