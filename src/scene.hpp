@@ -15,8 +15,6 @@ using cgp::timer_basic;
 
 // The structure of the custom scene
 struct scene_structure : cgp::scene_inputs_generic {
-
-	scene_structure();
 	
 	// ****************************** //
 	// Elements and shapes of the scene
@@ -42,19 +40,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 	field_function_structure field_function;     // A Parametric function used to generate the discrete field (*)
 	water_surface_structure water_surface;        // Mesh for water surface
 
-	/**
-	 *  Fishes
-	*/
-	int num_fishes;
-	
-	cgp::mesh_drawable fish0;
-	cgp::mesh_drawable fish1;
-	cgp::mesh_drawable fish2;
-	cgp::mesh_drawable fish3;
-	cgp::mesh_drawable fish4;
-	cgp::mesh_drawable jellyfish;
-	cgp::mesh_drawable alga_model;
-
+	// Fishes
 	fish_manager fish_manager;
 
 	// ****************************** //
@@ -66,7 +52,6 @@ struct scene_structure : cgp::scene_inputs_generic {
 	// Standard initialization to be called before the animation loop
 	void display_frame(); // The frame display to be called within the animation loop
 	void display_gui();   // The display of the GUI, also called within the animation loop
-	void initialize_models(); // Initialize the models of the fishes.
 	float get_height(float x,float y); //Computes the height at a given x and y.
 
 	void mouse_move_event();

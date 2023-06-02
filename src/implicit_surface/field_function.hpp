@@ -35,6 +35,7 @@ struct perlin_noise_params
 // The operator()(vec3 p) allows to query a value of the function at arbitrary point in space
 struct field_function_structure {
 	float floor_level;
+	float floor_level_2;
 
 	// Query the value of the function at any point p
 	float operator()(cgp::vec3 const& p) const;

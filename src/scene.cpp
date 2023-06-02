@@ -5,9 +5,7 @@
 
 using namespace cgp;
 
-scene_structure::scene_structure() {
-	num_fishes = 80;
-}
+
 
 // This function is called only once at the beginning of the program
 // This function can contain any complex operation that can be pre-computed once
@@ -82,49 +80,42 @@ void scene_structure::initialize()
 
 	// Animation and models
 	// ***************************************** //
-	initialize_models();
+	fish_manager.initialize(environment.domain.length, project::path);
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<> distrib(0, 1);
 
-	fish fish;
-	for (int i = 0;i < num_fishes;i++) {
-		fish.direction = { 2 * distrib(gen) - 1,2 * distrib(gen) - 1,2 * distrib(gen) - 1 };
-		do {
-			fish.position = { XY_LENGTH * 2 * (distrib(gen) - 0.5), XY_LENGTH * 2 * (distrib(gen) - 0.5), -Z_LENGTH * distrib(gen) };
-		} while (field_function(vec3(fish.position.x, fish.position.y, fish.position.z)) <= 0);
+	for (int i = 0;i < fish_manager.fish_groups_number;i++) {
 
-		fish.speed = fish_manager.fish_speed;
-		fish.frequency = 12 + 6 * distrib(gen);
-		int random = std::rand() % 5;
-		fish.modelId = random;
-		switch (random) {
-		case 0:
-			fish.model = fish0;
-			break;
-		case 1:
-			fish.model = fish1;
-			break;
-		case 2:
-			fish.model = fish2;
-			break;
-		case 3:
-			fish.model = fish3;
-			break;
-		case 4:
-			fish.model = fish4;
-			break;
+		// Group properties
+		int const fish_type = std::rand() % 5;
+		cgp::mesh_drawable const fish_model = fish_manager.fish_models.at(fish_type);
+		vec3 const group_dir = 2 * vec3(distrib(gen) - .5f, distrib(gen) - .5f, distrib(gen) - .5f);
+		vec3 group_pos;
+		do {
+			group_pos = { environment.domain.length.x * (distrib(gen) - 0.5), environment.domain.length.y * (distrib(gen) - 0.5), -environment.domain.length.z * distrib(gen) };
+		} while (field_function(group_pos) <= 0);
+
+		// Spawn fishes of group
+		for (int j = 0; j < fish_manager.fishes_per_group; j++) {
+			fish fish;
+			fish.speed = fish_manager.fish_speed;
+			fish.frequency = 12.0f + 6.0f * distrib(gen);
+			fish.position = group_pos + 20.0f * vec3(distrib(gen) - .5f, distrib(gen) - .5f, distrib(gen) - .5f);
+			fish.modelId = fish_type;
+			fish.model = fish_model;
+			fish_manager.fishes.push_back(fish);
 		}
-		fish_manager.fishes.push_back(fish);
 	}
 
-	for (int i = 0;i < fish_manager.num_group;i++) {
+	// Spawn algas
+	for (int j = 0;j < fish_manager.num_group;j++) {
 		float x = 200 * (distrib(gen) - 0.5);
 		float y = 200 * (distrib(gen) - 0.5);
 		vec3 group_position = { x,y,get_height(x,y)};
 		int number_group_algas = std::rand() % (fish_manager.max_alga_per_group - fish_manager.min_alga_per_group) + fish_manager.min_alga_per_group;
 		std::vector<alga> algas;
-		for (int i = 0;i < number_group_algas;i++) {
+		for (int i = 0; i < number_group_algas;i++) {
 			struct alga alga;
 			alga.position = group_position + 5*vec3{ 5 * distrib(gen) - 2.5,2 * distrib(gen) - 2.5,0 };
 			alga.amplitude = 0.5+0.3*distrib(gen);
@@ -152,18 +143,13 @@ void scene_structure::display_frame()
 	// Must be called before drawing the other shapes and without writing in the Depth Buffer
 	// ***************************************** //
 	glDepthMask(GL_FALSE); // disable depth-buffer writing
-	
 	draw(skybox, environment);
-	
-	//else
-	//	draw(underwater_skybox, environment);
-
 	glDepthMask(GL_TRUE);  // re-activate depth-buffer write
 
-	// Increment time
+	// Physical model for fishes
 	// ***************************************** //
-	if (num_fishes > 0)
-		fish_manager.refresh(field_function,timer.t);
+	if (fish_manager.fish_groups_number > 0)
+		fish_manager.refresh(field_function, timer.t);
 
 	// Draw fishes
 	// ***************************************** //
@@ -175,7 +161,7 @@ void scene_structure::display_frame()
 		double r= sqrt(fish.direction.x * fish.direction.x +fish.direction.y*fish.direction.y+ fish.direction.z * fish.direction.z);
 		double theta = acos(fish.direction.z / r);
 		double psi=atan(fish.direction.y/fish.direction.x);
-		if(fish.direction.x<0)
+		if(fish.direction.x < 0)
 			psi += 3.14159;
 		rotation_transform Y_transformation = cgp::rotation_transform::from_axis_angle({ 0,1,0 }, theta- 3.14159f / 2.0f );
 		rotation_transform Z_transformation = cgp::rotation_transform::from_axis_angle({ 0,0,1 }, psi);
@@ -199,11 +185,11 @@ void scene_structure::display_frame()
 			counter += 1;
 			float flow_angle = 2 * 3.14 * cgp::noise_perlin({ 0.01 * timer.t,0.01 * counter });
 			environment.uniform_generic.uniform_vec2["flow_dir"] = { cos(flow_angle),sin(flow_angle) };
-			alga_model.model.translation = alga.position + vec3{ 0,0,3.5 };
+			fish_manager.alga_model.model.translation = alga.position + vec3{ 0.0f, 0.0f, 3.5f };
 			environment.uniform_generic.uniform_float["amplitude"] = alga.amplitude;
 			environment.uniform_generic.uniform_float["frequency"] = alga.frequency;
 			environment.uniform_generic.uniform_float["rotation"] = alga.rotation;
-			draw(alga_model, environment);
+			draw(fish_manager.alga_model, environment);
 		}
 	}
 
@@ -289,78 +275,12 @@ void scene_structure::display_gui()
 }
 
 float scene_structure::get_height(float x, float y) {
-	float step = 0.1;
-	float z = 0;
+	float step = 0.1f;
+	float z = 0.0f;
 	while (field_function(vec3{ x, y, z }) <= environment.isovalue) {
 		z -= step;
 	}
 	return z;
-}
-
-void scene_structure::initialize_models() {
-	fish0.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/fish0/fish0.obj"));
-	fish0.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/fish0/fish0.png");
-	opengl_shader_structure fish0_shader;
-	fish0_shader.load(
-		project::path + "shaders/fish0/vert.glsl",
-		project::path + "shaders/terrain/frag.glsl");
-	fish0.shader = fish0_shader;
-	fish0.model.scaling = 1.5f;
-
-	fish1.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/fish1/fish1.obj"));
-	fish1.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/fish1/fish1.png");
-	opengl_shader_structure fish1_shader;
-	fish1_shader.load(
-		project::path + "shaders/fish1/vert.glsl",
-		project::path + "shaders/terrain/frag.glsl");
-	fish1.shader = fish1_shader;
-	fish1.model.scaling = 1.5f;
-
-	fish2.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/fish2/fish2.obj"));
-	fish2.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/fish2/fish2.jpeg");
-	opengl_shader_structure fish2_shader;
-	fish2_shader.load(
-		project::path + "shaders/fish2/vert.glsl",
-		project::path + "shaders/terrain/frag.glsl");
-	fish2.shader = fish2_shader;
-	fish2.model.scaling = 3.0f;
-
-	fish3.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/fish3/fish3.obj"));
-	fish3.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/fish3/fish3.png");
-	opengl_shader_structure fish3_shader;
-	fish3_shader.load(
-		project::path + "shaders/fish3/vert.glsl",
-		project::path + "shaders/terrain/frag.glsl");
-	fish3.shader = fish3_shader;
-	fish3.model.scaling = 1.5f;
-
-	fish4.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/fish4/fish4.obj"));
-	fish4.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/fish4/fish4.jpeg");
-	opengl_shader_structure fish4_shader;
-	fish4_shader.load(
-		project::path + "shaders/fish4/vert.glsl",
-		project::path + "shaders/terrain/frag.glsl");
-	fish4.shader = fish4_shader;
-	fish4.model.scaling = 12.0f;
-	
-	//boid.model.scaling = 0.1f;  //0.04F
-	jellyfish.initialize_data_on_gpu(mesh_load_file_obj(project::path+"assets/jellyfish/Jellyfish_001.obj"));
-	jellyfish.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/jellyfish/Jellyfish_001_tex.png");
-	opengl_shader_structure jellyfish_shader;
-	jellyfish_shader.load(
-		project::path + "shaders/jellyfish/vert.glsl",
-		project::path + "shaders/terrain/frag.glsl");
-	jellyfish.shader = jellyfish_shader;
-
-
-	alga_model.initialize_data_on_gpu(mesh_load_file_obj(project::path + "assets/alga/alga.obj"));
-	alga_model.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/alga/alga.jpeg");
-	opengl_shader_structure alga_shader;
-	alga_shader.load(
-		project::path + "shaders/alga/vert.glsl",
-		project::path + "shaders/terrain/frag.glsl");
-	alga_model.shader = alga_shader;
-	alga_model.model.scaling = 4.0f;
 }
 
 void scene_structure::mouse_move_event()
