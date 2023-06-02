@@ -104,7 +104,8 @@ void main()
 
 	// Height map
 	vec2 fixed_vertex_uv = vertex_position.xy * sand_texture_scale;
-	position += normal * vec4(texture(height_map, fixed_vertex_uv).xyz, 0) * (ridge_coefficient + noise_perlin(position.xy, small_sand_movement));
+    vec3 height_map      = (texture(height_map, fixed_vertex_uv).xyz * 2.0f) - 1.0f; // Unpack
+	position += normal * vec4(height_map, 0) * (ridge_coefficient + noise_perlin(position.xy, small_sand_movement));
 
 	// The projected position of the vertex in the normalized device coordinates:
 	vec4 position_projected = projection * view * position;

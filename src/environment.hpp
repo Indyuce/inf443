@@ -37,7 +37,7 @@ struct environment_structure : environment_generic_structure {
 	// Terrain
 	opengl_shader_structure shader;
 	float isovalue = 0.4f; // Isovalue used during the marching cube
-	float terrain_ridges = 3.0f;
+	float terrain_ridges = 2.0f;
 
 	float offset=0;
 	// Domain and physics
@@ -45,7 +45,7 @@ struct environment_structure : environment_generic_structure {
 		int resolution = 2;
 		cgp::vec3 length = { 200, 200, 50 };
 	} domain;
-	float scale = 0.05f;
+	float scale = 0.02f;
 
 	mat4 camera_view; // The position/orientation of a camera that can rotates freely around a specific position
 	mat4 camera_projection; // A projection structure (perspective or orthogonal projection)
