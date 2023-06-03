@@ -17,11 +17,13 @@ fish_manager::fish_manager()
 	this->obstacle_radius = 4.0f;
 	this->obstacle_coef = 0.04f;
 
+	grid_filled = false;
+	this->grid_step = 100;
+
 	// Algas
 	this->num_group = 10;
 	this->min_alga_per_group = 15;
 	this->max_alga_per_group = 30;
-	this->grid_step = 10;
 }
 
 void fish_manager::initialize(vec3 domain, float floor_level, std::string project_path) {
@@ -106,21 +108,35 @@ void fish_manager::refresh(field_function_structure field, float t)
 
 void fish_manager::refresh_grid()
 {
-	
+	int const max_x = 2 * domain_x / grid_step;
+	int const max_y = 2 * domain_y / grid_step;
+	int const max_z = domain_z / grid_step;
+
+	// Free previous grid
+	if (grid_filled) {
+		for (int i = 0; i < max_x; ++i) {
+			for (int j = 0; j < max_y; ++j) {
+				delete[] fish_grid[i][j];
+			}
+			delete[] fish_grid[i];
+		}
+		delete[] fish_grid;
+	} else {
+		grid_filled = true;
+	}
+
 	// Recreate an empty grid
 	fish_grid = new std::vector<fish> **[2 * domain_x / grid_step];
-	for (int i = 0; i < 2 * domain_x / grid_step; ++i)
-	{
+	for (int i = 0; i < max_x; ++i) {
 		fish_grid[i] = new std::vector<fish> *[2 * domain_y / grid_step];
-		for (int j = 0; j < 2 * domain_y / grid_step; ++j)
-		{
+		for (int j = 0; j < max_y; ++j) {
 			fish_grid[i][j] = new std::vector<fish>[domain_z / grid_step];
-			for (int k = 0; k < domain_z /grid_step; k++)
-			{
+			for (int k = 0; k < max_z; k++) {
 				fish_grid[i][j][k] = std::vector<fish>();
 			}
 		}
 	}
+
 	for (fish f : fishes)
 	{
 		int posX = (int)(f.position.x + domain_x / 2);

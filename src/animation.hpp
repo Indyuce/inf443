@@ -28,6 +28,7 @@ struct alga_group
 struct fish_manager
 {
 	float domain_x, domain_y, domain_z;
+	bool grid_filled;
 
 	fish_manager();
 
