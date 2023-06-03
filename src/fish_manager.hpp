@@ -12,41 +12,22 @@ struct fish
 	float frequency;
 };
 
-struct alga
-{
-	cgp::vec3 position;
-	float amplitude;
-	float frequency;
-	float rotation;
-};
-
-struct alga_group
-{
-	std::vector<alga> algas;
-};
-
 struct fish_manager
 {
-	float domain_x, domain_y, domain_z;
-	bool grid_filled;
-
 	fish_manager();
 
-	void initialize(cgp::vec3 domain, float floor_level, std::string project_path);
+	float domain_x, domain_y, domain_z;
+	bool grid_filled;
+	int ticks, grid_step;
 
-	// Fishes
-	int ticks;
 	std::vector<fish> fishes;
 	std::vector<cgp::mesh_drawable> fish_models;
-	cgp::mesh_drawable alga_model;
 	std::vector<fish> ***fish_grid;
 	int fish_groups_number;
 	int fishes_per_group;
 	float separation_coef, alignement_coef, cohesion_coef, fish_radius, fish_speed, obstacle_radius, obstacle_coef;
 
-	// Alga
-	std::vector<alga_group> alga_groups;
-	int num_group, min_alga_per_group, max_alga_per_group, grid_step;
+	void initialize(cgp::vec3 domain, float floor_level, std::string project_path);
 
 	void refresh(field_function_structure field, float t);
 

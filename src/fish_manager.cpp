@@ -1,5 +1,6 @@
-#include "animation.hpp"
+#include "fish_manager.hpp"
 #include <random>
+
 using namespace cgp;
 
 fish_manager::fish_manager()
@@ -10,7 +11,7 @@ fish_manager::fish_manager()
 
 	// Fishes
 	this->alignement_coef = 0.025f;
-	this->cohesion_coef = 0.004f;
+	this->cohesion_coef = 0.001f;
 	this->separation_coef = 1.0f;
 	this->fish_radius = 50.0f;
 	this->fish_speed = 0.5f;
@@ -19,11 +20,6 @@ fish_manager::fish_manager()
 
 	grid_filled = false;
 	this->grid_step = 100;
-
-	// Algas
-	this->num_group = 10;
-	this->min_alga_per_group = 15;
-	this->max_alga_per_group = 30;
 }
 
 void fish_manager::initialize(vec3 domain, float floor_level, std::string project_path) {
@@ -49,15 +45,6 @@ void fish_manager::initialize(vec3 domain, float floor_level, std::string projec
 
 		fish_models.push_back(drawable);
 	}
-
-	alga_model.initialize_data_on_gpu(mesh_load_file_obj(project_path + "assets/alga/alga.obj"));
-	alga_model.texture.load_and_initialize_texture_2d_on_gpu(project_path + "assets/alga/alga.jpeg");
-	opengl_shader_structure alga_shader;
-	alga_shader.load(
-		project_path + "shaders/alga/vert.glsl",
-		project_path + "shaders/terrain/frag.glsl");
-	alga_model.shader = alga_shader;
-	alga_model.model.scaling = 4.0f;
 }
 
 void fish_manager::refresh(field_function_structure field, float t)

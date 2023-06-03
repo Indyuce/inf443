@@ -2,7 +2,8 @@
 
 #include "cgp/cgp.hpp"
 #include "environment.hpp"
-#include "animation.hpp"
+#include "fish_manager.hpp"
+#include "terrain.hpp"
 #include "water_surface.hpp"
 #include "implicit_surface/implicit_surface.hpp"
 
@@ -42,6 +43,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 
 	// Fishes
 	fish_manager fish_manager;
+	terrain_structure terrain;
 
 	// ****************************** //
 	// Functions

@@ -110,26 +110,28 @@ void scene_structure::initialize()
 	}
 
 	// Spawn algas
-	for (int j = 0;j < fish_manager.num_group;j++) {
-		float x = 200 * (distrib(gen) - 0.5);
-		float y = 200 * (distrib(gen) - 0.5);
-		vec3 group_position = { x,y,get_height(x,y)};
-		int number_group_algas = std::rand() % (fish_manager.max_alga_per_group - fish_manager.min_alga_per_group) + fish_manager.min_alga_per_group;
+	terrain.initialize(project::path);
+	for (int j = 0;j < terrain.num_group;j++) {
+		float const x = environment.domain.length.x * (distrib(gen) - 0.5f);
+		float const y = environment.domain.length.y * (distrib(gen) - 0.5f);
+		vec3 const group_position = { x, y, get_height(x, y) };
+		int const number_group_algas = std::rand() % (terrain.max_alga_per_group - terrain.min_alga_per_group) + terrain.min_alga_per_group;
+
 		std::vector<alga> algas;
 		for (int i = 0; i < number_group_algas;i++) {
 			struct alga alga;
-			alga.position = group_position + 5*vec3{ 5 * distrib(gen) - 2.5,2 * distrib(gen) - 2.5,0 };
-			alga.amplitude = 0.5+0.3*distrib(gen);
-			alga.frequency = 8+3*distrib(gen);
-			alga.rotation = distrib(gen) * 2 * 3.14;
+			alga.position = group_position + 30.0f * vec3{ 5 * distrib(gen) - 2.5f, 2 * distrib(gen) - 2.5f, 0 };
+			alga.amplitude = 0.5 + 0.3 * distrib(gen);
+			alga.frequency = 8 + 3 * distrib(gen);
+			alga.rotation = distrib(gen) * 2 * std::_Pi;
+			alga.scale = 1.0f + 2 * (distrib(gen) - .5f) * .3f;
 			algas.push_back(alga);
 		}
 		struct alga_group group;
 		group.algas = algas;
-		fish_manager.alga_groups.push_back(group);
+		terrain.alga_groups.push_back(group);
 	}
 	
-
 	// Remove warnings for unset uniforms
 	cgp_warning::max_warning = 0;
 }
@@ -180,17 +182,18 @@ void scene_structure::display_frame()
 	
 	// Draw algas
 	// ***************************************** //
-	for (alga_group group : fish_manager.alga_groups) {
+	for (alga_group group : terrain.alga_groups) {
 		int counter = 0;
 		for (alga alga : group.algas) {
-			counter += 1;
-			float flow_angle = 2 * 3.14 * cgp::noise_perlin({ 0.01 * timer.t,0.01 * counter });
-			environment.uniform_generic.uniform_vec2["flow_dir"] = { cos(flow_angle),sin(flow_angle) };
-			fish_manager.alga_model.model.translation = alga.position + vec3{ 0.0f, 0.0f, 3.5f };
+			float flow_angle = 2 * std::_Pi * cgp::noise_perlin({ 0.01f * timer.t, 0.01f * ++counter });
+			environment.uniform_generic.uniform_vec2["flow_dir"] = { cos(flow_angle), sin(flow_angle) };
+			vec3 const vertical_offset = vec3{ 0.0f, 0.0f, 35.0f };
+			terrain.alga_model.model.translation = alga.position + vertical_offset * alga.scale;
+			terrain.alga_model.model.scaling = terrain_structure::DEFAULT_ALGA_SCALE * alga.scale;
 			environment.uniform_generic.uniform_float["amplitude"] = alga.amplitude;
 			environment.uniform_generic.uniform_float["frequency"] = alga.frequency;
 			environment.uniform_generic.uniform_float["rotation"] = alga.rotation;
-			draw(fish_manager.alga_model, environment);
+			draw(terrain.alga_model, environment);
 		}
 	}
 

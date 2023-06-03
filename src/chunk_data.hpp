@@ -2,6 +2,9 @@
 
 #include "cgp/cgp.hpp"
 
+
+// NO LONGER USED
+
 class chunk_data
 {
 	public:
