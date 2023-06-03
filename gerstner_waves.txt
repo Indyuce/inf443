@@ -1,5 +1,28 @@
 PROCEDURAL WAVE GENERATION
 
+// STRUCT DEFINITION
+
+struct gerstner_wave {
+	vec2 direction;
+	float amplitude;
+	float steepness;
+	float frequency;
+	float speed;
+
+	gerstner_wave::gerstner_wave() {
+	}
+
+	gerstner_wave::gerstner_wave(vec2 direction_, float amplitude_, float steepness_, float frequency_, float speed_) {
+		direction = direction_;
+		amplitude = amplitude_;
+		steepness = steepness_;
+		frequency = frequency_;
+		speed = speed_;
+	}
+};
+
+// STRUCT GENERATION
+
 if (waves_enabled) {
 
     // Proceduraly generated wave parameters like Perlin noise

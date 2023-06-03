@@ -39,7 +39,6 @@ struct environment_structure : environment_generic_structure {
 	float isovalue = 0.4f; // Isovalue used during the marching cube
 	float terrain_ridges = 2.0f;
 
-	float offset=0;
 	// Domain and physics
 	struct { 
 		int resolution = 1;
@@ -56,25 +55,6 @@ struct environment_structure : environment_generic_structure {
 	vec3 get_camera_position() const;
 	
 	void send_opengl_uniform(opengl_shader_structure const& shader, bool expected = true) const override;
-};
-
-struct gerstner_wave {
-	vec2 direction;
-	float amplitude;
-	float steepness;
-	float frequency;
-	float speed;
-
-	gerstner_wave::gerstner_wave() {
-	}
-
-	gerstner_wave::gerstner_wave(vec2 direction_, float amplitude_, float steepness_, float frequency_, float speed_) {
-		direction = direction_;
-		amplitude = amplitude_;
-		steepness = steepness_;
-		frequency = frequency_;
-		speed = speed_;
-	}
 };
 
 // Global variables about your project

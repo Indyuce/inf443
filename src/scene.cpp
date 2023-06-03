@@ -256,7 +256,6 @@ void scene_structure::display_gui()
 	implicit_surface.gui_update(environment, field_function);
 
 	if (ImGui::CollapsingHeader("Environment")) {
-		ImGui::SliderFloat("Offset", &environment.offset, 0, 10);
 		ImGui::ColorEdit3("Light Color", &environment.light_color[0]);
 		ImGui::SliderFloat2("Light Azimut/Polar", &environment.light_direction[0], -180, 180);
 

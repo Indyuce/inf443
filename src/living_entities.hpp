@@ -1,6 +1,7 @@
+#pragma once
+
 #include "cgp/cgp.hpp"
 #include "implicit_surface/field_function.hpp"
-#pragma once
 
 struct fish
 {

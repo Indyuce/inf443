@@ -2,7 +2,7 @@
 
 #include "cgp/cgp.hpp"
 #include "environment.hpp"
-#include "fish_manager.hpp"
+#include "living_entities.hpp"
 #include "terrain.hpp"
 #include "water_surface.hpp"
 #include "implicit_surface/implicit_surface.hpp"
