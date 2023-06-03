@@ -1,18 +1,20 @@
-
-
 #include "scene.hpp"
-#include <random>
 
 using namespace cgp;
-
-
 
 // This function is called only once at the beginning of the program
 // This function can contain any complex operation that can be pre-computed once
 void scene_structure::initialize()
 {
+	// Initialize time
 	timer.start();
 	timer.scale = 1.5f;
+	particles.initialize(timer.t, project::path);
+	
+	// Initialize random
+	std::random_device random_device;
+	rand_gen = std::mt19937(random_device());
+	rand_double = std::uniform_real_distribution<>(0.0f, 1.0f);
 
 	// Set the behavior of the camera and its initial position
 	// ********************************************** //
@@ -37,6 +39,8 @@ void scene_structure::initialize()
 	skybox.shader.load(
 		project::path + "shaders/skybox/vert.glsl",
 		project::path + "shaders/skybox/frag.glsl");
+
+	test_drawable.initialize_data_on_gpu(mesh_primitive_sphere(3.0f));
 
 	// Load terrain + shader
 	// ***************************************** //
@@ -81,27 +85,24 @@ void scene_structure::initialize()
 	// Animation and models
 	// ***************************************** //
 	fish_manager.initialize(environment.domain.length, environment.floor_level, project::path);
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_real_distribution<> distrib(0, 1);
 
 	for (int i = 0;i < fish_manager.fish_groups_number;i++) {
 
 		// Group properties
 		int const fish_type = std::rand() % 5;
 		cgp::mesh_drawable const fish_model = fish_manager.fish_models.at(fish_type);
-		vec3 const group_dir = 2 * vec3(distrib(gen) - .5f, distrib(gen) - .5f, distrib(gen) - .5f);
+		vec3 const group_dir = 2 * vec3(rand_double(rand_gen) - .5f, rand_double(rand_gen) - .5f, rand_double(rand_gen) - .5f);
 		vec3 group_pos;
 		do {
-			group_pos = { environment.domain.length.x * (distrib(gen) - 0.5), environment.domain.length.y * (distrib(gen) - 0.5), environment.floor_level * (.5f)};
+			group_pos = { environment.domain.length.x * (rand_double(rand_gen) - 0.5), environment.domain.length.y * (rand_double(rand_gen) - 0.5), environment.floor_level * (.5f)};
 		} while (field_function(group_pos) <= 0);
 
 		// Spawn fishes of group
 		for (int j = 0; j < fish_manager.fishes_per_group; j++) {
 			fish fish;
 			fish.speed = fish_manager.fish_speed;
-			fish.frequency = 12.0f + 6.0f * distrib(gen);
-			fish.position = group_pos + 20.0f * vec3(distrib(gen) - .5f, distrib(gen) - .5f, distrib(gen) - .5f);
+			fish.frequency = 12.0f + 6.0f * rand_double(rand_gen);
+			fish.position = group_pos + 20.0f * vec3(rand_double(rand_gen) - .5f, rand_double(rand_gen) - .5f, rand_double(rand_gen) - .5f);
 			fish.direction = group_dir;
 			fish.modelId = fish_type;
 			fish.model = fish_model;
@@ -112,19 +113,19 @@ void scene_structure::initialize()
 	// Spawn algas
 	terrain.initialize(project::path);
 	for (int j = 0;j < terrain.num_group;j++) {
-		float const x = environment.domain.length.x * (distrib(gen) - 0.5f);
-		float const y = environment.domain.length.y * (distrib(gen) - 0.5f);
+		float const x = environment.domain.length.x * (rand_double(rand_gen) - 0.5f);
+		float const y = environment.domain.length.y * (rand_double(rand_gen) - 0.5f);
 		vec3 const group_position = { x, y, get_height(x, y) };
 		int const number_group_algas = std::rand() % (terrain.max_alga_per_group - terrain.min_alga_per_group) + terrain.min_alga_per_group;
 
 		std::vector<alga> algas;
 		for (int i = 0; i < number_group_algas;i++) {
 			struct alga alga;
-			alga.position = group_position + 30.0f * vec3{ 5 * distrib(gen) - 2.5f, 2 * distrib(gen) - 2.5f, 0 };
-			alga.amplitude = 0.5 + 0.3 * distrib(gen);
-			alga.frequency = 8 + 3 * distrib(gen);
-			alga.rotation = distrib(gen) * 2 * std::_Pi;
-			alga.scale = 1.0f + 2 * (distrib(gen) - .5f) * .3f;
+			alga.position = group_position + 30.0f * vec3{ 5 * rand_double(rand_gen) - 2.5f, 2 * rand_double(rand_gen) - 2.5f, 0 };
+			alga.amplitude = 0.5 + 0.3 * rand_double(rand_gen);
+			alga.frequency = 8 + 3 * rand_double(rand_gen);
+			alga.rotation = rand_double(rand_gen) * 2 * std::_Pi;
+			alga.scale = 1.0f + 2 * (rand_double(rand_gen) - .5f) * .3f;
 			algas.push_back(alga);
 		}
 		struct alga_group group;
@@ -137,6 +138,9 @@ void scene_structure::initialize()
 }
 
 float const MOVE_SPEED = 3.0f;
+
+
+static int counter = 0;
 
 // This function is called permanently at every new frame
 // Note that you should avoid having costly computation and large allocation defined there. This function is mostly used to call the draw() functions on pre-existing data.
@@ -200,6 +204,20 @@ void scene_structure::display_frame()
 	// Update time
 	// ***************************************** //
 	timer.update();
+
+	// Update and draw particles
+	// ***************************************** //
+
+	if ((counter = (counter + 1) % 3) == 0) {
+		vec3  random_dir = 10.0f * normalize(vec3(rand_double(rand_gen) - .5f, rand_double(rand_gen) - .5f, (rand_double(rand_gen) - .5f) / 10.0f));
+		particles.register_particle(particle(vec3(0, 0, -100.0f), random_dir, 0.0f, 0.0f, 1.0f, 1.0f, .01f * vec3(1, 1, 1), .01f, 3.0f, 0));
+	}
+
+	particles.tick(timer.t);
+	for (particle& particle : particles.active_particles) {
+		test_drawable.model.translation = particle.position;
+		draw(test_drawable, environment);
+	}
 
 	// Move player
 	// ***************************************** //

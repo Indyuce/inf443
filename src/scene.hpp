@@ -5,7 +5,9 @@
 #include "living_entities.hpp"
 #include "terrain.hpp"
 #include "water_surface.hpp"
+#include "particles.hpp"
 #include "implicit_surface/implicit_surface.hpp"
+#include <random>
 
 // This definitions allow to use the structures: mesh, mesh_drawable, etc. without mentionning explicitly cgp::
 using cgp::mesh;
@@ -27,6 +29,9 @@ struct scene_structure : cgp::scene_inputs_generic {
 	environment_structure environment;   // Standard environment controler
 	input_devices inputs;                // Storage for inputs status (mouse, keyboard, window dimension)
 	timer_basic timer;                   // For timer
+
+	std::mt19937 rand_gen;
+	std::uniform_real_distribution<> rand_double;
 	
 	// ****************************** //
 	// Elements and shapes of the scene
@@ -36,6 +41,8 @@ struct scene_structure : cgp::scene_inputs_generic {
 	cgp::skybox_drawable skybox;
 	cgp::skybox_drawable underwater_skybox;
 
+	mesh_drawable test_drawable;
+
 	// Terrain
 	implicit_surface_structure implicit_surface; // Structures used for the implicit surface (*)
 	field_function_structure field_function;     // A Parametric function used to generate the discrete field (*)
@@ -44,6 +51,9 @@ struct scene_structure : cgp::scene_inputs_generic {
 	// Fishes
 	fish_manager fish_manager;
 	terrain_structure terrain;
+
+	// Particles
+	particle_manager particles;
 
 	// ****************************** //
 	// Functions
