@@ -80,7 +80,7 @@ void scene_structure::initialize()
 
 	// Animation and models
 	// ***************************************** //
-	fish_manager.initialize(environment.domain.length, project::path);
+	fish_manager.initialize(environment.domain.length, environment.floor_level, project::path);
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<> distrib(0, 1);
@@ -93,7 +93,7 @@ void scene_structure::initialize()
 		vec3 const group_dir = 2 * vec3(distrib(gen) - .5f, distrib(gen) - .5f, distrib(gen) - .5f);
 		vec3 group_pos;
 		do {
-			group_pos = { environment.domain.length.x * (distrib(gen) - 0.5), environment.domain.length.y * (distrib(gen) - 0.5), -environment.domain.length.z * distrib(gen) };
+			group_pos = { environment.domain.length.x * (distrib(gen) - 0.5), environment.domain.length.y * (distrib(gen) - 0.5), environment.floor_level * (.5f)};
 		} while (field_function(group_pos) <= 0);
 
 		// Spawn fishes of group
@@ -102,6 +102,7 @@ void scene_structure::initialize()
 			fish.speed = fish_manager.fish_speed;
 			fish.frequency = 12.0f + 6.0f * distrib(gen);
 			fish.position = group_pos + 20.0f * vec3(distrib(gen) - .5f, distrib(gen) - .5f, distrib(gen) - .5f);
+			fish.direction = group_dir;
 			fish.modelId = fish_type;
 			fish.model = fish_model;
 			fish_manager.fishes.push_back(fish);

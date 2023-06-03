@@ -5,28 +5,31 @@ using namespace cgp;
 fish_manager::fish_manager()
 {
 	ticks = 0;
-	fish_groups_number = 5;
-	fishes_per_group = 20;
+	fish_groups_number = 6;
+	fishes_per_group = 30;
 
-	this->alignement_coef = 0.01f;
-	this->cohesion_coef = 0.02f;
-	this->separation_coef = 0.4f;
-	this->fish_radius = 10.0f;
-	this->fish_speed = 0.15f;
+	// Fishes
+	this->alignement_coef = 0.025f;
+	this->cohesion_coef = 0.004f;
+	this->separation_coef = 1.0f;
+	this->fish_radius = 50.0f;
+	this->fish_speed = 0.5f;
 	this->obstacle_radius = 4.0f;
 	this->obstacle_coef = 0.04f;
+
+	// Algas
 	this->num_group = 10;
 	this->min_alga_per_group = 15;
 	this->max_alga_per_group = 30;
 	this->grid_step = 10;
 }
 
-void fish_manager::initialize(vec3 domain, std::string project_path) {
+void fish_manager::initialize(vec3 domain, float floor_level, std::string project_path) {
 	domain_x = domain.x;
 	domain_y = domain.y;
-	domain_z = domain.z;
+	domain_z = -floor_level;
 
-	float scales[5] = { 1.5f, 1.5f, 3.0f, 1.5f, 12.0f };
+	float scales[5] = { 4.5f, 4.5f, 9.0f, 4.5f, 35.0f };
 
 	for (int i = 0; i < 5; i++) {
 		cgp::mesh_drawable drawable;
@@ -40,6 +43,7 @@ void fish_manager::initialize(vec3 domain, std::string project_path) {
 			project_path + "shaders/terrain/frag.glsl");
 		drawable.shader = drawable_shader;
 		drawable.model.scaling = scales[i];
+		drawable.material.color = { 1,1,1};
 
 		fish_models.push_back(drawable);
 	}
@@ -94,7 +98,7 @@ void fish_manager::refresh(field_function_structure field, float t)
 		current.direction += out_of_bound_force;
 		if (ticks % 10 == 0)
 			current.direction += {0.05 * (distrib(gen) - 0.5), 0.05 * (distrib(gen) - 0.5), 0.05 * (distrib(gen) - 0.5)};
-		current.direction.z *= 0.99f;
+		current.direction.z *= 0.99f; // Attenuates vertical velocity in the long run.
 		current.direction = cgp::normalize(current.direction);
 		current.position = current.position + (fish_speed * current.direction);
 	}
@@ -235,11 +239,11 @@ cgp::vec3 fish_manager::calculate_out_of_bound_force(fish fish)
 {
 	vec3 position = fish.position;
 	float out_of_bound_force = 0.01f;
-	float forceX = position.x > 100 ? -out_of_bound_force : position.x < -100 ? out_of_bound_force
+	float forceX = position.x > domain_x * .5f ? -out_of_bound_force : position.x < -domain_x * .5f ? out_of_bound_force
 																			  : 0;
-	float forceY = position.y > 100 ? -out_of_bound_force : position.y < -100 ? out_of_bound_force
+	float forceY = position.y > domain_y * .5f ? -out_of_bound_force : position.y < -domain_y * .5f ? out_of_bound_force
 																			  : 0;
-	float forceZ = position.z > -10 ? -out_of_bound_force : position.z < -90 ? out_of_bound_force
+	float forceZ = position.z > -domain_z * .25f ? -out_of_bound_force : position.z < -domain_z * .75f ? out_of_bound_force
 																			 : 0;
 	return {forceX, forceY, forceZ};
 }

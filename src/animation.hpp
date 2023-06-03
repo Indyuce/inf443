@@ -31,7 +31,7 @@ struct fish_manager
 
 	fish_manager();
 
-	void initialize(cgp::vec3 domain, std::string project_path);
+	void initialize(cgp::vec3 domain, float floor_level, std::string project_path);
 
 	// Fishes
 	int ticks;

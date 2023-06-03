@@ -42,8 +42,8 @@ struct environment_structure : environment_generic_structure {
 	float offset=0;
 	// Domain and physics
 	struct { 
-		int resolution = 2;
-		cgp::vec3 length = { 200, 200, 50 };
+		int resolution = 1;
+		cgp::vec3 length = { 1000, 1000, 50 };
 	} domain;
 	float scale = 0.02f;
 
