@@ -96,9 +96,9 @@ void main()
     vec3 N = fragment.normal;
 
     if (material.texture_settings.use_texture) {
-	    vec2 uv_image       = fragment.uv; 
+	    vec2 uv_image       = fragment.uv;
 	    vec3 texture_color  = texture(image_texture, uv_image).xyz;
-        fragment_color      = fragment.color * texture_color;
+        fragment_color      = fragment_color * texture_color;
 
         if (material.texture_settings.use_normal_map) {
             vec3 repacked   = (N + 1.0f) / 2.0f;
@@ -111,7 +111,8 @@ void main()
     /************************************************************/
     vec3 R = reflect(light_direction, N);
     vec3 C = camera_position - fragment.position;
-    vec3 Cn = normalize(C);
+    float attenuation_distance = length(C);
+    vec3 Cn = C / attenuation_distance;
     
     // Inverse the normal if it is viewed from its back (two-sided surface)
 	// (note: gl_FrontFacing doesn't work on Mac)
@@ -146,7 +147,6 @@ void main()
     
     // Water attenuation
     /************************************************************/
-    float attenuation_distance = length(C);
     float attenuation = exp(-water_attenuation_coefficient * scale * attenuation_distance);
     current_color = current_color * attenuation + (1 - attenuation) * fog_color;
     

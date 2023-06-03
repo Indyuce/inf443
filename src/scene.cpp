@@ -9,7 +9,6 @@ void scene_structure::initialize()
 	// Initialize time
 	timer.start();
 	timer.scale = 1.5f;
-	particles.initialize(timer.t, project::path);
 	
 	// Initialize random
 	std::random_device random_device;
@@ -39,8 +38,6 @@ void scene_structure::initialize()
 	skybox.shader.load(
 		project::path + "shaders/skybox/vert.glsl",
 		project::path + "shaders/skybox/frag.glsl");
-
-	test_drawable.initialize_data_on_gpu(mesh_primitive_sphere(3.0f));
 
 	// Load terrain + shader
 	// ***************************************** //
@@ -72,6 +69,10 @@ void scene_structure::initialize()
 	implicit_surface.drawable_param.shape.material.phong.specular_exponent = 2;
 	//drawable_chunk = terrain_gen.generate_chunk_data(0, 0, shader_custom);
 
+	// Load particles
+	// ***************************************** //
+	particles.initialize(timer.t, project::path);
+
 	// Load water surface & shader
 	// ***************************************** //
 	water_surface.initialize_models();
@@ -102,7 +103,7 @@ void scene_structure::initialize()
 			fish fish;
 			fish.speed = fish_manager.fish_speed;
 			fish.frequency = 12.0f + 6.0f * rand_double(rand_gen);
-			fish.position = group_pos + 20.0f * vec3(rand_double(rand_gen) - .5f, rand_double(rand_gen) - .5f, rand_double(rand_gen) - .5f);
+			fish.position = group_pos + 50.0f * vec3(rand_double(rand_gen) - .5f, rand_double(rand_gen) - .5f, rand_double(rand_gen) - .5f);
 			fish.direction = group_dir;
 			fish.modelId = fish_type;
 			fish.model = fish_model;
@@ -139,8 +140,13 @@ void scene_structure::initialize()
 
 float const MOVE_SPEED = 3.0f;
 
+vec3 scene_structure::random_vector() {
+	return vec3(random_offset(), random_offset(), random_offset());
+}
 
-static int counter = 0;
+float scene_structure::random_offset() {
+	return 2 * rand_double(rand_gen) - 1.0f;
+}
 
 // This function is called permanently at every new frame
 // Note that you should avoid having costly computation and large allocation defined there. This function is mostly used to call the draw() functions on pre-existing data.
@@ -160,28 +166,41 @@ void scene_structure::display_frame()
 
 	// Draw fishes
 	// ***************************************** //
+	vec3 const camera_position = environment.get_camera_position();
 	for (int i = 0;i < fish_manager.fishes.size();i++) {
 		fish fish = fish_manager.fishes[i];
 		
 		rotation_transform horiz_transformation = cgp::rotation_transform::from_axis_angle({ 0,0,1 }, 3.14159f / 2.0f);
 		rotation_transform X_transformation = cgp::rotation_transform::from_axis_angle({ 1,0,0 }, 3.14159f / 2.0f);
-		double r= sqrt(fish.direction.x * fish.direction.x +fish.direction.y*fish.direction.y+ fish.direction.z * fish.direction.z);
+		double r = norm(fish.direction);
 		double theta = acos(fish.direction.z / r);
-		double psi=atan(fish.direction.y/fish.direction.x);
-		if(fish.direction.x < 0)
-			psi += 3.14159;
+		double psi = atan(fish.direction.y / fish.direction.x);
+		if (fish.direction.x < 0)
+			psi += 3.14159f;
+		
 		rotation_transform Y_transformation = cgp::rotation_transform::from_axis_angle({ 0,1,0 }, theta- 3.14159f / 2.0f );
 		rotation_transform Z_transformation = cgp::rotation_transform::from_axis_angle({ 0,0,1 }, psi);
-		//boid.model.rotation = cgp::rotation_transform::from_vector_transform({ 0,0,1 }, boid_direction[i])*;
-		//fish.model.model.rotation = cgp::rotation_transform::from_axis_angle(fish.direction, 3.14159 / 2) * cgp::rotation_transform::from_vector_transform({ 0,0,1 }, fish.direction);
-		//fish.model.model.rotation = cgp::rotation_transform::from_vector_transform({ 0,0,1 }, fish.direction);
-		fish.model.model.rotation = Z_transformation * Y_transformation *horiz_transformation * X_transformation;
+		fish.model.model.rotation = Z_transformation * Y_transformation * horiz_transformation * X_transformation;
 		fish.model.model.translation = fish.position;
 		//boid.material.color = boid_color[i];
 		environment.uniform_generic.uniform_vec3["head_position"] = fish.position;
 		environment.uniform_generic.uniform_vec3["direction"] = fish.direction;
 		environment.uniform_generic.uniform_float["frequency"] = fish.frequency;
 		draw(fish.model, environment);
+
+		// Register particles if needed
+		if (std::rand() % 30 == 0) {
+			if (norm(fish.position - camera_position) > 200.0f) continue;
+
+			vec3 random_dir = 10.0f * normalize(-fish.direction + .3f * random_vector());
+			vec3 initial_pos = fish.position - fish.direction * 10.0f;
+			float initial_angle = random_offset() * std::_Pi;
+			float rot_speed = 10.0f * (1.0f + .2f * random_offset()) * (rand() % 2 == 0 ? 1.0f : -1.0f);
+			float scale = 1.0f + .3f * random_offset();
+			float lifetime = 3.0f * (1.0f + .5f * random_offset());
+
+			particles.register_particle(particle(initial_pos, random_dir, initial_angle, rot_speed, -1.0f, 1.0f, .1f * vec3(2.0f, 2.0f, 1.0f), .1f, lifetime, scale), 0);
+		}
 	}
 	
 	// Draw algas
@@ -198,6 +217,17 @@ void scene_structure::display_frame()
 			environment.uniform_generic.uniform_float["frequency"] = alga.frequency;
 			environment.uniform_generic.uniform_float["rotation"] = alga.rotation;
 			draw(terrain.alga_model, environment);
+
+
+			if (std::rand() % 60 == 0) {
+				if (norm(alga.position - camera_position) > 200.0f) continue;
+
+				vec3 initial_pos = alga.position + 30.0f * random_vector();
+				float scale = 1.0f + .3f * random_offset();
+				float lifetime = 5.0f * (1.0f + .5f * random_offset());
+
+				particles.register_particle(particle(initial_pos, vec3(0, 0, 0), -1.0f, 1.0f * vec3(0, 0, 1), lifetime, scale), 1);
+			}
 		}
 	}
 
@@ -207,17 +237,7 @@ void scene_structure::display_frame()
 
 	// Update and draw particles
 	// ***************************************** //
-
-	if ((counter = (counter + 1) % 3) == 0) {
-		vec3  random_dir = 10.0f * normalize(vec3(rand_double(rand_gen) - .5f, rand_double(rand_gen) - .5f, (rand_double(rand_gen) - .5f) / 10.0f));
-		particles.register_particle(particle(vec3(0, 0, -100.0f), random_dir, 0.0f, 0.0f, 1.0f, 1.0f, .01f * vec3(1, 1, 1), .01f, 3.0f, 0));
-	}
-
 	particles.tick(timer.t);
-	for (particle& particle : particles.active_particles) {
-		test_drawable.model.translation = particle.position;
-		draw(test_drawable, environment);
-	}
 
 	// Move player
 	// ***************************************** //
@@ -243,7 +263,6 @@ void scene_structure::display_frame()
 	environment.uniform_generic.uniform_float["time"] = timer.t;
 
 	// Get camera location
-	vec3 const camera_position = environment.get_camera_position();
 	environment.uniform_generic.uniform_vec3["camera_position"] = camera_position;
 	environment.uniform_generic.uniform_float["water_surface_plane_length"] = water_surface.total_length;
 	environment.uniform_generic.uniform_float["water_surface_center_length"] = water_surface.center_length;
@@ -265,6 +284,46 @@ void scene_structure::display_frame()
 	draw(water_surface.negative_x, environment);
 	draw(water_surface.positive_y, environment);
 	draw(water_surface.negative_y, environment);
+
+	display_semi_transparent();
+}
+
+void scene_structure::display_semi_transparent()
+{
+	// Enable use of alpha component as color blending for transparent elements
+	//  alpha = current_color.alpha
+	//  new color = previous_color * alpha + current_color * (1-alpha)
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// Disable depth buffer writing
+	//  - Transparent elements cannot use depth buffer
+	//  - They are supposed to be display from furest to nearest elements
+	glDepthMask(false);
+
+	// Re-orient the grass shape to always face the camera direction
+	// Rotation such that the grass follows the right-vector of the camera, while pointing toward the z-direction
+	rotation_transform orient_to_face_camera = rotation_transform::from_frame_transform({ 1,0,0 }, { 0,0,1 }, camera_control.camera_model.right(), { 0,0,1 });
+
+	// Display particles
+	// ***************************************** //
+	for (particle& particle : particles.active_particles) {
+		mesh_drawable* const drawable = &particle.type->drawable;
+		drawable->model.translation = particle.position;
+		drawable->model.rotation = orient_to_face_camera;
+		drawable->model.scaling = particle.type->scale * particle.scale;
+
+		// Particle fades out during last X seconds
+		float const fadeout_time = 1.0f;
+		float const opacity_multiplier = std::min(particle.lifetime - particle.time_lived, fadeout_time) / fadeout_time;
+		environment.uniform_generic.uniform_float["opacity_multiplier"] = opacity_multiplier;
+
+		draw(*drawable, environment);
+	}
+
+	// Don't forget to re-activate the depth-buffer write
+	glDepthMask(true);
+	glDisable(GL_BLEND);
 }
 
 void scene_structure::display_gui()

@@ -11,9 +11,9 @@ fish_manager::fish_manager()
 
 	// Fishes
 	this->alignement_coef = 0.025f;
-	this->cohesion_coef = 0.001f;
+	this->cohesion_coef = 0.0006f;
 	this->separation_coef = 1.0f;
-	this->fish_radius = 50.0f;
+	this->fish_radius = 60.0f;
 	this->fish_speed = 0.5f;
 	this->obstacle_radius = 4.0f;
 	this->obstacle_coef = 0.04f;

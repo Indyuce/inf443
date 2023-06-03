@@ -11,6 +11,9 @@ struct fish
 	cgp::mesh_drawable model;
 	int modelId;
 	float frequency;
+
+	float last_particle_emission;
+	float last_particle_emission_test;
 };
 
 struct fish_manager

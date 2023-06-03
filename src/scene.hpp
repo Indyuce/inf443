@@ -18,7 +18,7 @@ using cgp::timer_basic;
 
 // The structure of the custom scene
 struct scene_structure : cgp::scene_inputs_generic {
-	
+
 	// ****************************** //
 	// Elements and shapes of the scene
 	// ****************************** //
@@ -32,7 +32,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 
 	std::mt19937 rand_gen;
 	std::uniform_real_distribution<> rand_double;
-	
+
 	// ****************************** //
 	// Elements and shapes of the scene
 	// ****************************** //
@@ -40,8 +40,6 @@ struct scene_structure : cgp::scene_inputs_generic {
 	// Skybox
 	cgp::skybox_drawable skybox;
 	cgp::skybox_drawable underwater_skybox;
-
-	mesh_drawable test_drawable;
 
 	// Terrain
 	implicit_surface_structure implicit_surface; // Structures used for the implicit surface (*)
@@ -59,16 +57,17 @@ struct scene_structure : cgp::scene_inputs_generic {
 	// Functions
 	// ****************************** //
 
-	void initialize();
-
-	// Standard initialization to be called before the animation loop
+	void initialize(); // Standard initialization to be called before the animation loop
 	void display_frame(); // The frame display to be called within the animation loop
-	void display_gui();   // The display of the GUI, also called within the animation loop
-	float get_height(float x,float y); //Computes the height at a given x and y.
+	void display_semi_transparent(); // Display semi transparent tiles
+	void display_gui(); // The display of the GUI, also called within the animation loop
+
+	float get_height(float x, float y); //Computes the height at a given x and y.
+	vec3 random_vector();
+	float random_offset();
 
 	void mouse_move_event();
 	void mouse_click_event();
 	void keyboard_event();
 	void idle_frame();
-	
 };
