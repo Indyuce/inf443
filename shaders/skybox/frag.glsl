@@ -19,20 +19,28 @@ uniform vec3 light_direction;
 uniform vec3 camera_position;
 uniform vec3 camera_direction;
 
+uniform float fog_distance;
+
 void main()
 {
     // Texture color
     vec3 current_color = vec3(texture(image_skybox, fragment.position));
 
+    // Is this pixel underwater? Since water is transparent, frame
+    // can have both underwater and sky pixels at the same time.
+    //
+    // Two conditions:
+    // - Position condition: if player is inside of water, skybox is entirely blue water.
+    // - Geometric condition: if z is above a certain threshold value,
+    //   that depends on view distance and camera altitude, then player
+    //   is looking at sky pixel.
+    float water_level = 5.0f;
+    vec3 fragment_direction = normalize(fragment.position);
+    bool under_water_pixel = camera_position.z < water_level || fragment_direction.z < -camera_position.z / fog_distance;
+
     // Underwater
-    bool under_water = camera_position.z < 5.0f;
     /***********************************************************/
-    //Tres tres bresom  le fonctionnement de la skybox !! 
-    float theta = 4*fragment.position.z;
-    
-    
-    //Fog color3 for deep seas and fog color2 for shallow one
-    if (under_water) {
+    if (under_water_pixel) {
         current_color = fog_color;
     }
     
@@ -42,7 +50,6 @@ void main()
     
         // Skybox disappear in fog far away
         vec3 horizon_fog_color  = vec3(1.0f, 1.0f, 1.0f);
-        vec3 fragment_direction = normalize(fragment.position);
         float fog_coefficient   = pow(1 - max(0, fragment_direction.z), 30);
     
         // Direct sunlight

@@ -276,20 +276,14 @@ void scene_structure::display_frame()
 	draw(implicit_surface.drawable_param.domain_box, environment);
 	draw(implicit_surface.drawable_param.shape, environment);
 
-	// Draw water surface
-	// ***************************************** //
-	water_surface.update_positions(camera_position);
-	draw(water_surface.center, environment);
-	draw(water_surface.positive_x, environment);
-	draw(water_surface.negative_x, environment);
-	draw(water_surface.positive_y, environment);
-	draw(water_surface.negative_y, environment);
-
-	display_semi_transparent();
+	display_semi_transparent(camera_position);
 }
 
-void scene_structure::display_semi_transparent()
+void scene_structure::display_semi_transparent(vec3 const& camera_position)
 {
+	// Initialization
+	// ***************************************** //
+
 	// Enable use of alpha component as color blending for transparent elements
 	//  alpha = current_color.alpha
 	//  new color = previous_color * alpha + current_color * (1-alpha)
@@ -298,15 +292,15 @@ void scene_structure::display_semi_transparent()
 
 	// Disable depth buffer writing
 	//  - Transparent elements cannot use depth buffer
-	//  - They are supposed to be display from furest to nearest elements
+	//  - They are supposed to be display from furthest to nearest elements
 	glDepthMask(false);
+
+	// Display particles
+	// ***************************************** //
 
 	// Re-orient the grass shape to always face the camera direction
 	// Rotation such that the grass follows the right-vector of the camera, while pointing toward the z-direction
 	rotation_transform orient_to_face_camera = rotation_transform::from_frame_transform({ 1,0,0 }, { 0,0,1 }, camera_control.camera_model.right(), { 0,0,1 });
-
-	// Display particles
-	// ***************************************** //
 	for (particle& particle : particles.active_particles) {
 		mesh_drawable* const drawable = &particle.type->drawable;
 		drawable->model.translation = particle.position;
@@ -320,6 +314,18 @@ void scene_structure::display_semi_transparent()
 
 		draw(*drawable, environment);
 	}
+
+	// Draw water surface
+	// ***************************************** //
+	water_surface.update_positions(camera_position);
+	draw(water_surface.center, environment);
+	draw(water_surface.positive_x, environment);
+	draw(water_surface.negative_x, environment);
+	draw(water_surface.positive_y, environment);
+	draw(water_surface.negative_y, environment);
+
+	// Final step
+	// ***************************************** //
 
 	// Don't forget to re-activate the depth-buffer write
 	glDepthMask(true);
@@ -343,7 +349,7 @@ void scene_structure::display_gui()
 		ImGui::SliderFloat("Direct", &environment.direct, 0.0f, 10.0f);
 		ImGui::SliderInt("Direct Exp", &environment.direct_exp, 1, 1000);
 
-		ImGui::ColorEdit3("Water Color", &environment.background_color[0]);
+		ImGui::ColorEdit3("Water Color", &environment.fog_color[0]);
 		ImGui::SliderFloat("Fog Distance", &environment.fog_distance, 500.0f, 5000.0f);
 
 		ImGui::Checkbox("Water Surface Height Shader", &environment.surf_height);

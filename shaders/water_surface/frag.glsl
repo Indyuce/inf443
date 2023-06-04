@@ -152,18 +152,18 @@ vec3 get_wave_normal(vec3 position) {
 // ----------------------------------------------------------------------------------
 void main()
 {
-    vec3 current_color = vec3(0, 0, 0);
-
     // Height map shader for debug
     /***********************************************************/
     if (surf_height) {
         float p = fragment.position.z;
         vec3 color1 = vec3(0.012,0.478,0.871);
         vec3 color2 = vec3(0.012,0.898,0.718);
-        current_color = p * color2 + (1 - p) * color1;
-        FragColor = vec4(current_color, 1.0);
+        FragColor = vec4(p * color2 + (1 - p) * color1, 1.0);
         return;
     }
+
+    vec3 current_color = vec3(0, 0, 0);
+    float opacity = 1.0;
 
     // Prepare for refraction/reflection
     float distance_to_water = length(fragment.position - camera_position);
@@ -207,7 +207,7 @@ void main()
     else {
         
         // TODO atmosphere shader?
-        float fog_coefficient   = pow(min(distance_to_water / fog_distance, 1.0f), 3);
+        float fog_coefficient = min(distance_to_water / fog_distance, 1.0f);
         vec3 far_away_for_color = vec3(1.0f, 1.0f, 1.0f);
 
         // ----------------------------------------------------------------------------------
@@ -216,38 +216,16 @@ void main()
         // However, a very small fog distance can easily halve GPU utilization.
         // ----------------------------------------------------------------------------------
         if (fog_coefficient > .95) {
-            FragColor = vec4(far_away_for_color, 1.0f);
-            return;
-        }
-
-        // Partial reflection - Water reflects at normal angles and refracts more at steep angles
-		vec3 N = get_wave_normal(fragment.position); // NORMAl CALCULATION.
-        float angle_steepness = max(0, dot(N, -I));
-        
-        // ----------------------------------------------------------------------------------
-        // OPTIMISATION: over 95% reflection, total reflection.
-        // Not much changed.
-        // ----------------------------------------------------------------------------------
-        if (angle_steepness < .05) {
-            
-            current_color = texture(image_skybox, reflect(I, N)).xyz;
+            current_color = far_away_for_color;
 
         } else {
-        
-            // Refraction
-            vec3 refracted_dir      = refract(I, N, 1.0f / water_optical_index);
-            float total_distance    = distance_to_water * abs(floor_level - camera_position.z) / abs(camera_position.z - fragment.position.z);
-            vec2 projected          = refracted_dir.xy * total_distance; // Refrac ted direction projected onto expected 
-            vec3 refracted_color    = texture(texture_sand, (camera_position.xy + projected) * sand_texture_scale).xyz;
-            refracted_color         = water_attenuation(refracted_color, total_distance - distance_to_water); // Atenuation
-
-            // Reflection (no attenuation)
-            vec3 reflected_color    = texture(image_skybox, reflect(I, N)).xyz;
-
-            current_color = mix(refracted_color, reflected_color, 1 - angle_steepness);
+            // Partial reflection - Water reflects at normal angles and refracts more at steep angles
+            // Opacity also corresponds to the angle steepness
+		    vec3 N = get_wave_normal(fragment.position); // NORMAl CALCULATION.
+            opacity = max(fog_coefficient, 1 - max(0, dot(N, -I)));
+            current_color = texture(image_skybox, reflect(I, N)).xyz;
+            current_color = mix(current_color, far_away_for_color, fog_coefficient);
         }
-
-        current_color = mix(current_color, far_away_for_color, fog_coefficient);
     }
 
     // Color attenuation
@@ -257,5 +235,5 @@ void main()
     // float specular_magnitude = pow(max(dot(R, Cn), 0.0), specularExp) * specular;
     // current_color += specular_magnitude * light_color;
 
-    FragColor = vec4(current_color, 1.0); // Note: the last alpha component is not used here
+    FragColor = vec4(current_color, opacity); // Note: the last alpha component is not used here
 }

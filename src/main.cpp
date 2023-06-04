@@ -89,8 +89,7 @@ void animation_loop()
 	scene.environment.camera_projection = scene.camera_projection.matrix();
 	glViewport(0, 0, scene.window.width, scene.window.height);
 
-	vec3 const& background_color = scene.environment.background_color;
-	glClearColor(background_color.x, background_color.y, background_color.z, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
