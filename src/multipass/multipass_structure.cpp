@@ -12,6 +12,8 @@ void multipass_structure::initialize(std::string project_path)
 
 	// Set input texture of pass 2 <= Output texture output of pass1
 	quad_pass_2.texture = fbo_pass_1.texture;
+	quad_pass_2.supplementary_texture["extra_texture"] = fbo_pass_1.texture_extra;
+	quad_pass_2.supplementary_texture["bright_texture"] = fbo_pass_1.texture_bright;
 
 	quad_pass_2.shader.load(
 		project_path + "shaders/screen_effect_convolution/vert.glsl",

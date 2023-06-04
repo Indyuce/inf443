@@ -8,7 +8,7 @@
 #include "particles.hpp"
 #include "camera_movement.hpp"
 #include "implicit_surface/implicit_surface.hpp"
-#include "multipass_structure/multipass_structure.hpp"
+#include "multipass/multipass_structure.hpp"
 #include <random>
 
 // This definitions allow to use the structures: mesh, mesh_drawable, etc. without mentionning explicitly cgp::

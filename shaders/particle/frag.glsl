@@ -23,7 +23,8 @@ in struct fragment_data
 
 // Output of the fragment shader - output color
 layout(location=0) out vec4 FragColor;
-
+layout(location=1) out vec4 ExtraColor;
+layout(location=2) out vec4 BrightColor;
 
 // Uniform values that must be send from the C++ code
 // ***************************************************** //
@@ -70,6 +71,18 @@ uniform float scale;
 // Specific to particles
 uniform float opacity_multiplier;
 
+// Depth buffer calculation
+/***************************************************************************************************/
+uniform float depth_min;
+uniform float depth_max;
+
+float get_depth_buffer(float frag_distance) {
+	return (frag_distance - depth_min) / depth_max;
+}
+
+// Main Shader
+/***************************************************************************************************/
+
 void main()
 {
 
@@ -97,6 +110,15 @@ void main()
     float attenuation = exp(-water_attenuation_coefficient * scale * attenuation_distance);
     current_color = current_color * attenuation + (1 - attenuation) * fog_color;
 	
-	// Output color, with the alpha component
-	FragColor = vec4(current_color, material.alpha * color_image_texture.a * opacity_multiplier);
+	// Texture outputs
+    /************************************************************/
+	FragColor = vec4(current_color, material.alpha * color_image_texture.a * opacity_multiplier); // Output color, with the alpha component
+	ExtraColor = vec4(get_depth_buffer(attenuation_distance), 0.0, 0.0, 0.0);  // Output extra buffers
+
+	// check whether fragment output is higher than threshold, if so output as brightness color
+    float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    if(brightness > 1.0)
+        BrightColor = vec4(FragColor.rgb, 1.0);
+    else
+        BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
 }

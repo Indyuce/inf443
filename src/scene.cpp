@@ -279,6 +279,11 @@ void scene_structure::display_scene()
 	vec3 camera_direction = vec3(environment.camera_view(2, 0), environment.camera_view(2, 1), environment.camera_view(2, 2));
 	environment.uniform_generic.uniform_vec3["camera_direction"] = camera_direction;
 
+	// Render settings
+	environment.uniform_generic.uniform_float["depth_min"] = camera_projection.depth_min;
+	// Should be camera_projection.depth_max but it produces a better result when fog_distance is used
+	environment.uniform_generic.uniform_float["depth_max"] = environment.fog_distance; 
+
 	// Draw terrain
 	// ***************************************** //
 	draw(implicit_surface.drawable_param.domain_box, environment);

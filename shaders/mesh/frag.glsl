@@ -23,6 +23,7 @@ in struct fragment_data
 
 // Output of the fragment shader - output color
 layout(location=0) out vec4 FragColor;
+layout(location=1) out vec4 ExtraColor;
 
 
 // Uniform values that must be send from the C++ code

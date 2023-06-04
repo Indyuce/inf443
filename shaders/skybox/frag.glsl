@@ -6,6 +6,8 @@ in struct fragment_data
 } fragment;
 
 layout(location=0) out vec4 FragColor;
+layout(location=1) out vec4 ExtraColor;
+layout(location=2) out vec4 BrightColor;
 
 uniform samplerCube image_skybox;
 
@@ -20,6 +22,9 @@ uniform vec3 camera_position;
 uniform vec3 camera_direction;
 
 uniform float fog_distance;
+
+// Main Shader
+/***************************************************************************************************/
 
 void main()
 {
@@ -59,6 +64,16 @@ void main()
         // Horizon fog
         current_color = mix(current_color, horizon_fog_color, fog_coefficient);
     }
-
+    
+	// Texture outputs
+    /************************************************************/
 	FragColor = vec4(current_color, 1.0);
+	ExtraColor = vec4(0.0, 0.0, 0.0, 0.0); // Output extra buffers
+
+    // check whether fragment output is higher than threshold, if so output as brightness color
+    float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    if(brightness > 1.0)
+        BrightColor = vec4(FragColor.rgb, 1.0);
+    else
+        BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
 }

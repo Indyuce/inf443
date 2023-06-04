@@ -12,6 +12,8 @@ in struct fragment_data
 
 // Output of the fragment shader - output color
 layout(location=0) out vec4 FragColor;
+layout(location=1) out vec4 ExtraColor;
+layout(location=2) out vec4 BrightColor;
 
 // View matrix
 uniform mat4 view;
@@ -58,6 +60,7 @@ uniform samplerCube image_skybox;
 uniform sampler2D texture_sand;
 uniform float sand_texture_scale;
 uniform float fog_distance;
+uniform float render_distance;
 
 // This shader uses Perlin noise to generate small bumps on
 // the water surface creating realistic specular highlights.
@@ -124,7 +127,16 @@ float noise_perlin(vec2 p, perlin_noise_params params)
 // High octave is required for small bumps/ridges.
 perlin_noise_params surface_ridges = perlin_noise_params(0.8f, 1.3f, 7, .02f, 1.3f, 0.5f);
 
-// Water surface fragment shader
+// Depth buffer calculation
+/***************************************************************************************************/
+uniform float depth_min;
+uniform float depth_max;
+
+float get_depth_buffer(float frag_distance) {
+	return (frag_distance - depth_min) / depth_max;
+}
+
+// Main water surface Shader
 /***************************************************************************************************/
 
 vec3 water_attenuation(vec3 current_color, float attenuation_distance) {
@@ -235,6 +247,16 @@ void main()
     // TODO
     // float specular_magnitude = pow(max(0, dot(R, Cn)), specularExp) * specular;
     // current_color += specular_magnitude * light_color;
-
+    
+	// Texture outputs
+    /************************************************************/
     FragColor = vec4(current_color, opacity); // Note: the last alpha component is not used here
+	ExtraColor = vec4(get_depth_buffer(distance_to_water), 0.0, 0.0, 0.0); // Output extra buffers
+
+    // check whether fragment output is higher than threshold, if so output as brightness color
+    float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    if(brightness > 1.0)
+        BrightColor = vec4(FragColor.rgb, 1.0);
+    else
+        BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
 }

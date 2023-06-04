@@ -1,10 +1,10 @@
 #pragma once
 
 #include "cgp/cgp.hpp"
-
+#include "custom_fbo_structure.hpp"
 
 struct multipass_structure {
-	cgp::opengl_fbo_structure fbo_pass_1;
+	custom_fbo_structure fbo_pass_1;
 
 	cgp::mesh_drawable quad_pass_2;
 
