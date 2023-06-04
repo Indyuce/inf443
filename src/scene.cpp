@@ -10,6 +10,9 @@ void scene_structure::initialize()
 	timer.start();
 	timer.scale = 1.5f;
 
+	// Multipass
+	multipass_rendering.initialize(project::path);
+
 	// Initialize random
 	std::random_device random_device;
 	rand_gen = std::mt19937(random_device());
@@ -146,9 +149,29 @@ float scene_structure::random_offset() {
 	return 2 * rand_double(rand_gen) - 1.0f;
 }
 
+void scene_structure::display_frame() {
+
+	// ************************************** //
+	// First rendering pass
+	// ************************************* //
+	multipass_rendering.update_screen_size(window.width, window.height);
+
+	multipass_rendering.start_pass_1(); // 1- Activate the rendering on the FBO
+	display_scene();
+	multipass_rendering.end_pass_1(); // 3- Stop the rendering on the FBO
+
+	// ************************************** //
+	// Second rendering pass
+	// ************************************* //
+	multipass_rendering.start_pass_2();
+	multipass_rendering.draw_pass_2(environment); // Apply the screen effect at that time
+	multipass_rendering.end_pass_2();
+}
+
+
 // This function is called permanently at every new frame
 // Note that you should avoid having costly computation and large allocation defined there. This function is mostly used to call the draw() functions on pre-existing data.
-void scene_structure::display_frame()
+void scene_structure::display_scene()
 {
 	// Draw skybox
 	// Must be called before drawing the other shapes and without writing in the Depth Buffer

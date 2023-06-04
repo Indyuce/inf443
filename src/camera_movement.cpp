@@ -1,6 +1,5 @@
-#include "terrain.hpp"
 #include <random>
-#include "cinematic_mode.hpp"
+#include "camera_movement.hpp"
 
 using namespace cgp;
 
