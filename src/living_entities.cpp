@@ -41,6 +41,7 @@ void fish_manager::initialize(vec3 domain, float floor_level, std::string projec
 			project_path + "shaders/terrain/frag.glsl");
 		drawable.shader = drawable_shader;
 		drawable.model.scaling = scales[i];
+		drawable.material.texture_settings.two_sided = true;
 
 		fish_models.push_back(drawable);
 	}

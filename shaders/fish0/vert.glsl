@@ -67,7 +67,7 @@ void main()
 	vec4 position_projected = projection * view * position;
 
 	// Fill the parameters sent to the fragment shader
-	fragment.position = real_vertex_position.xyz;
+	fragment.position = position.xyz;
 	fragment.normal   = normal.xyz;
 	fragment.color = vertex_color;
 	fragment.uv = vertex_uv;

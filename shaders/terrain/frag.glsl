@@ -93,12 +93,15 @@ void main()
     // Texture and normal map
     /************************************************************/
     vec3 fragment_color = fragment.color;
-    vec3 N = fragment.normal;
+    vec3 N = normalize(fragment.normal);
+    if (material.texture_settings.two_sided && gl_FrontFacing == false) {
+		N = -N;
+	}
 
     if (material.texture_settings.use_texture) {
 	    vec2 uv_image       = fragment.uv;
 	    vec3 texture_color  = texture(image_texture, uv_image).xyz;
-        fragment_color      = fragment_color * texture_color;
+        fragment_color      = fragment_color * material.color * texture_color;
 
         if (material.texture_settings.use_normal_map) {
             vec3 repacked   = (N + 1.0f) / 2.0f;
@@ -120,12 +123,6 @@ void main()
         N = -N;
     }
 
-    // TODO Color Attenuation
-    /************************************************************/
-    //float dl = length(camera_position - fragment.position);
-    //float attenuation_coef = 1 - min(dl / attenuation_distance, 1);
-    vec3 eff_light_color = light_color; //attenuation_coef * light_color;
-
     // Phong Illumination
     /************************************************************/
     // Diffuse sunlight
@@ -143,7 +140,7 @@ void main()
         flashlight_magnitude = flashlight * pow(max(dot(Cn, camera_direction), 0), flashlight_exp) * max(0, dot(N, Cn));
 
     // Calculate color
-    current_color += ((material.phong.ambient + diffuse_magnitude) * fragment_color + specular_magnitude) * eff_light_color + flashlight_magnitude * material.color;
+    current_color += ((material.phong.ambient + diffuse_magnitude) * fragment_color + specular_magnitude) * light_color + flashlight_magnitude * material.color;
     
     // Water attenuation
     /************************************************************/
