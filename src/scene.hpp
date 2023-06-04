@@ -6,6 +6,7 @@
 #include "terrain.hpp"
 #include "water_surface.hpp"
 #include "particles.hpp"
+#include "cinematic_mode.hpp"
 #include "implicit_surface/implicit_surface.hpp"
 #include <random>
 
@@ -24,6 +25,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 	// ****************************** //
 	camera_controller_orbit_euler camera_control;
 	camera_projection_perspective camera_projection;
+	camera_movement_structure camera_movement;
 	window_structure window;
 
 	environment_structure environment;   // Standard environment controler

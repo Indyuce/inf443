@@ -18,4 +18,5 @@ void terrain_structure::initialize(std::string project_path)
 		project_path + "shaders/alga/vert.glsl",
 		project_path + "shaders/terrain/frag.glsl");
 	alga_model.shader = alga_shader;
+	alga_model.material.phong = { 1.0f, 0, 0,0 };
 }

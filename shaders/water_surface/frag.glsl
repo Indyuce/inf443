@@ -222,8 +222,9 @@ void main()
             // Partial reflection - Water reflects at normal angles and refracts more at steep angles
             // Opacity also corresponds to the angle steepness
 		    vec3 N = get_wave_normal(fragment.position); // NORMAl CALCULATION.
-            opacity = max(fog_coefficient, 1 - max(0, dot(N, -I)));
-            current_color = texture(image_skybox, reflect(I, N)).xyz;
+            opacity = 1 - min(0.2f, pow(max(0, dot(N, -I)), 3)); // Fresnel effect. Source: https://www.youtube.com/watch?v=vTMEdHcKgM4&t=874s
+            opacity = max(opacity, fog_coefficient); // Fix fog.
+            current_color = texture(image_skybox, reflect(I, N)).xyz; // Water texture is reflection. TODO better handling of refraction with multipass.
             current_color = mix(current_color, far_away_for_color, fog_coefficient);
         }
     }
@@ -232,7 +233,7 @@ void main()
 
     // Specular sunlight
     // TODO
-    // float specular_magnitude = pow(max(dot(R, Cn), 0.0), specularExp) * specular;
+    // float specular_magnitude = pow(max(0, dot(R, Cn)), specularExp) * specular;
     // current_color += specular_magnitude * light_color;
 
     FragColor = vec4(current_color, opacity); // Note: the last alpha component is not used here

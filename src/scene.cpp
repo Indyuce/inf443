@@ -9,7 +9,7 @@ void scene_structure::initialize()
 	// Initialize time
 	timer.start();
 	timer.scale = 1.5f;
-	
+
 	// Initialize random
 	std::random_device random_device;
 	rand_gen = std::mt19937(random_device());
@@ -17,7 +17,7 @@ void scene_structure::initialize()
 
 	// Set the behavior of the camera and its initial position
 	// ********************************************** //
-	camera_control.initialize(inputs, window); 
+	camera_control.initialize(inputs, window);
 	camera_control.set_rotation_axis_z(); // camera rotates around z-axis
 	// look_at(camera_position, targeted_point, up_direction)
 	camera_control.camera_model.distance_to_center = 0.0f;
@@ -87,7 +87,7 @@ void scene_structure::initialize()
 	// ***************************************** //
 	fish_manager.initialize(environment.domain.length, environment.floor_level, project::path);
 
-	for (int i = 0;i < fish_manager.fish_groups_number;i++) {
+	for (int i = 0; i < fish_manager.fish_groups_number; i++) {
 
 		// Group properties
 		int const fish_type = std::rand() % 5;
@@ -95,7 +95,7 @@ void scene_structure::initialize()
 		vec3 const group_dir = 2 * vec3(rand_double(rand_gen) - .5f, rand_double(rand_gen) - .5f, rand_double(rand_gen) - .5f);
 		vec3 group_pos;
 		do {
-			group_pos = { environment.domain.length.x * (rand_double(rand_gen) - 0.5), environment.domain.length.y * (rand_double(rand_gen) - 0.5), environment.floor_level * (.5f)};
+			group_pos = { environment.domain.length.x * (rand_double(rand_gen) - 0.5), environment.domain.length.y * (rand_double(rand_gen) - 0.5), environment.floor_level * (.5f) };
 		} while (field_function(group_pos) <= 0);
 
 		// Spawn fishes of group
@@ -113,14 +113,14 @@ void scene_structure::initialize()
 
 	// Spawn algas
 	terrain.initialize(project::path);
-	for (int j = 0;j < terrain.num_group;j++) {
+	for (int j = 0; j < terrain.num_group; j++) {
 		float const x = environment.domain.length.x * (rand_double(rand_gen) - 0.5f);
 		float const y = environment.domain.length.y * (rand_double(rand_gen) - 0.5f);
 		vec3 const group_position = { x, y, get_height(x, y) };
 		int const number_group_algas = std::rand() % (terrain.max_alga_per_group - terrain.min_alga_per_group) + terrain.min_alga_per_group;
 
 		std::vector<alga> algas;
-		for (int i = 0; i < number_group_algas;i++) {
+		for (int i = 0; i < number_group_algas; i++) {
 			struct alga alga;
 			alga.position = group_position + 30.0f * vec3{ 5 * rand_double(rand_gen) - 2.5f, 2 * rand_double(rand_gen) - 2.5f, 0 };
 			alga.amplitude = 0.5 + 0.3 * rand_double(rand_gen);
@@ -133,12 +133,10 @@ void scene_structure::initialize()
 		group.algas = algas;
 		terrain.alga_groups.push_back(group);
 	}
-	
+
 	// Remove warnings for unset uniforms
 	cgp_warning::max_warning = 0;
 }
-
-float const MOVE_SPEED = 3.0f;
 
 vec3 scene_structure::random_vector() {
 	return vec3(random_offset(), random_offset(), random_offset());
@@ -241,20 +239,7 @@ void scene_structure::display_frame()
 
 	// Move player
 	// ***************************************** //
-	if (camera_control.inputs->keyboard.is_pressed(GLFW_KEY_W))
-		camera_control.camera_model.manipulator_translate_front(-MOVE_SPEED);
-	else if (camera_control.inputs->keyboard.is_pressed(GLFW_KEY_S))
-		camera_control.camera_model.manipulator_translate_front(MOVE_SPEED);
-
-	if (camera_control.inputs->keyboard.is_pressed(GLFW_KEY_A))
-		camera_control.camera_model.manipulator_translate_in_plane(vec2(MOVE_SPEED, 0));
-	else if (camera_control.inputs->keyboard.is_pressed(GLFW_KEY_D))
-		camera_control.camera_model.manipulator_translate_in_plane(vec2(-MOVE_SPEED, 0));
-
-	if (camera_control.inputs->keyboard.is_pressed(GLFW_KEY_SPACE))
-		camera_control.camera_model.manipulator_translate_in_plane(vec2(0, -MOVE_SPEED));
-	else if (camera_control.inputs->keyboard.shift)
-		camera_control.camera_model.manipulator_translate_in_plane(vec2(0, MOVE_SPEED));
+	camera_movement.update(camera_control);
 
 	// Uniforms
 	// ***************************************** //
@@ -357,6 +342,10 @@ void scene_structure::display_gui()
 
 		ImGui::SliderFloat("Terrain Ridges", &environment.terrain_ridges, 0.0f, 10.0f);
 		ImGui::SliderFloat("Color Attenuation Scale", &environment.scale, 0.001f, 0.1f);
+	}
+
+	if (ImGui::CollapsingHeader("Other")) {
+		ImGui::Checkbox("Cinematic Camera", &camera_movement.cinematic_mode);
 	}
 }
 
