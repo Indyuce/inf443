@@ -3,7 +3,7 @@
 #include "cgp/cgp.hpp"
 
 
-// Just the CGP opengl_fbo_structure but with two textures associated to it!!!
+// Just the CGP opengl_fbo_structure but with two new textures associated to it!!!
 struct custom_fbo_structure {
 
 	// ID of the FBO

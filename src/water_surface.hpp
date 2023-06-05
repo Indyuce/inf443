@@ -36,6 +36,6 @@ struct water_surface_structure
 
 	void set_shaders(opengl_shader_structure& shader);
 
-	void set_textures(opengl_texture_image_structure& sand, opengl_texture_image_structure& skybox, opengl_texture_image_structure& texture_scene);
+	void set_textures(opengl_texture_image_structure& texture_sand, opengl_texture_image_structure& texture_skybox, opengl_texture_image_structure& texture_scene, opengl_texture_image_structure& texture_extra);
 };
 

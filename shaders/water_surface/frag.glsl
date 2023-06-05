@@ -61,6 +61,7 @@ struct gerstner_wave {
 uniform samplerCube texture_skybox;
 uniform sampler2D texture_scene;
 uniform sampler2D texture_sand;
+uniform sampler2D texture_extra;
 uniform float sand_texture_scale;
 uniform float fog_distance;
 uniform float render_distance;
@@ -128,7 +129,7 @@ float noise_perlin(vec2 p, perlin_noise_params params)
 }
 
 // High octave is required for small bumps/ridges.
-perlin_noise_params surface_ridges = perlin_noise_params(0.8f, 1.3f, 7, .02f, 1.3f, 0.5f);
+perlin_noise_params surface_ridges = perlin_noise_params(0.8f, 1.3f, 7, .02f, 1.6f, 0.5f);
 
 // Depth buffer calculation
 /***************************************************************************************************/
@@ -143,8 +144,7 @@ float get_depth_buffer(float frag_distance) {
 /***************************************************************************************************/
 
 vec3 water_attenuation(vec3 current_color, float attenuation_distance) {
-
-  return mix(fog_color, current_color, exp(-water_attenuation_coefficient * scale * attenuation_distance));
+    return mix(fog_color, current_color, exp(-water_attenuation_coefficient * scale * attenuation_distance));
 }
 
 vec3 get_wave_normal(vec3 position) {
@@ -160,6 +160,8 @@ vec3 get_wave_normal(vec3 position) {
     float denom = 2 * incr;
     return normalize(vec3(dz_x / denom, dz_y / denom, 1));
 }
+
+
 
 // ----------------------------------------------------------------------------------
 // OPTIMISATION: avoid use of length() and normalize() or cache the results
@@ -178,10 +180,25 @@ void main()
         return;
     }
 
-    vec3 current_color = vec3(0, 0, 0);
+    
+    // Compare to previous pass depth buffer.
+    // TODO This might be doable by just binding the depth buffer of FBO0 to FBO1
+    /***********************************************************/
+    float distance_to_water = length(fragment.position - camera_position);
+    float depth_buffer = get_depth_buffer(distance_to_water);
+    // Source: https://www.youtube.com/watch?v=GADTasvDOX4&t=386s (projective texture mapping)
+    vec2 clip_space_fixed = (clip_space.xy / clip_space.w) / 2.0f + .5f;
+    float previous_depth_buffer = texture(texture_extra, clip_space_fixed).x; 
+    if (previous_depth_buffer < depth_buffer) {
+        FragColor = texture(texture_scene, clip_space_fixed);
+        return;
+    }
+    
+    // Start shader
+    /***********************************************************/
 
     // Prepare for refraction/reflection
-    float distance_to_water = length(fragment.position - camera_position);
+    vec3 current_color = vec3(0, 0, 0);
     vec3 I = (fragment.position - camera_position) / distance_to_water;
 
     // Underwater
@@ -245,7 +262,7 @@ void main()
             // This is the texture from the previous pass.
             // This is also the texture being used for refraction.
             // Source: https://www.youtube.com/watch?v=GADTasvDOX4&t=386s (projective texture mapping)
-            vec3 refraction_texture = texture(texture_scene, (clip_space.xy / clip_space.w) / 2.0f + .5f + refract_text_offset).xyz;
+            vec3 refraction_texture = texture(texture_scene, clip_space_fixed + refract_text_offset).xyz;
             // Reflect skybox onto water to find the reflection texture.
             vec3 reflexion_texture = texture(texture_skybox, reflect(I, N)).xyz; 
 
@@ -269,7 +286,7 @@ void main()
 	// Texture outputs
     /************************************************************/
     FragColor = vec4(current_color, 1.0);
-	ExtraColor = vec4(get_depth_buffer(distance_to_water), 0.0, 0.0, 0.0); // Output extra buffers
+	ExtraColor = vec4(depth_buffer, 0.0, 0.0, 0.0); // Output extra buffers
 
     // check whether fragment output is higher than threshold, if so output as brightness color
     float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));

@@ -52,8 +52,7 @@ void water_surface_structure::update_positions_and_draw(vec3 const& camera_posit
 	cgp::draw(negative_y, environment);
 }
 
-void water_surface_structure::set_shaders(opengl_shader_structure& shader)
-{
+void water_surface_structure::set_shaders(opengl_shader_structure& shader) {
 	center.shader = shader;
 	positive_x.shader = shader;
 	negative_x.shader = shader;
@@ -61,17 +60,17 @@ void water_surface_structure::set_shaders(opengl_shader_structure& shader)
 	negative_y.shader = shader;
 }
 
-void set_textures_drawable(mesh_drawable& drawable, opengl_texture_image_structure& texture_sand, opengl_texture_image_structure& texture_skybox, opengl_texture_image_structure& texture_scene) {
+void set_textures_drawable(mesh_drawable& drawable, opengl_texture_image_structure& texture_sand, opengl_texture_image_structure& texture_skybox, opengl_texture_image_structure& texture_scene, opengl_texture_image_structure& texture_extra) {
 	drawable.supplementary_texture["texture_sand"] = texture_sand;
 	drawable.supplementary_texture["texture_scene"] = texture_scene;
 	drawable.supplementary_texture["texture_skybox"] = texture_skybox;
+	drawable.supplementary_texture["texture_extra"] = texture_extra;
 }
 
-void water_surface_structure::set_textures(opengl_texture_image_structure& texture_sand, opengl_texture_image_structure& texture_skybox, opengl_texture_image_structure& texture_scene)
-{
-	set_textures_drawable(center, texture_sand, texture_skybox, texture_scene);
-	set_textures_drawable(positive_x, texture_sand, texture_skybox, texture_scene);
-	set_textures_drawable(negative_x, texture_sand, texture_skybox, texture_scene);
-	set_textures_drawable(positive_y, texture_sand, texture_skybox, texture_scene);
-	set_textures_drawable(negative_y, texture_sand, texture_skybox, texture_scene);
+void water_surface_structure::set_textures(opengl_texture_image_structure& texture_sand, opengl_texture_image_structure& texture_skybox, opengl_texture_image_structure& texture_scene, opengl_texture_image_structure& texture_extra) {
+	set_textures_drawable(center, texture_sand, texture_skybox, texture_scene, texture_extra);
+	set_textures_drawable(positive_x, texture_sand, texture_skybox, texture_scene, texture_extra);
+	set_textures_drawable(negative_x, texture_sand, texture_skybox, texture_scene, texture_extra);
+	set_textures_drawable(positive_y, texture_sand, texture_skybox, texture_scene, texture_extra);
+	set_textures_drawable(negative_y, texture_sand, texture_skybox, texture_scene, texture_extra);
 }

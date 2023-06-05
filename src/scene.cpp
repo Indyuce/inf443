@@ -84,7 +84,7 @@ void scene_structure::initialize()
 		project::path + "shaders/water_surface/vert.glsl",
 		project::path + "shaders/water_surface/frag.glsl");
 	water_surface.set_shaders(water_shader);
-	water_surface.set_textures(implicit_surface.drawable_param.shape.texture, skybox.texture, multipass_rendering.fbo_pass_1.texture);
+	water_surface.set_textures(implicit_surface.drawable_param.shape.texture, skybox.texture, multipass_rendering.fbo_pass_1.texture, multipass_rendering.fbo_pass_1.texture_extra);
 
 	// Animation and models
 	// ***************************************** //
