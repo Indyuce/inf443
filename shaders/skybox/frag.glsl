@@ -68,7 +68,7 @@ void main()
 	// Texture outputs
     /************************************************************/
 	FragColor = vec4(current_color, 1.0);
-	ExtraColor = vec4(1.0, 0.0, 0.0, 0.0); // Output extra buffers
+	ExtraColor = vec4(1.0, 1.0, 0.0, 0.0); // Output extra buffers
 
     // check whether fragment output is higher than threshold, if so output as brightness color
     float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));

@@ -29,13 +29,19 @@ vec3 simple_blur(int blur_radius) {
 void main()
 {
 	float depth = texture(extra_texture, uv_frag).x;
+	float blurrable = 1.0f - texture(extra_texture, uv_frag).y; // Distinguishes non-blurrable objects like skybox from others.
 	vec3 current_color = texture(image_texture, uv_frag).xyz;
-	 
+
+	FragColor = vec4(vec3(1,1,1) * depth, 1.0f);
+	return;
+
 	// Simple Blur TODO gaussian with multipass (separability)
 	//**************************************************************************************//
-	int blur_radius = int(floor(0.0f * depth));
-	if (blur_radius > 0)
-		current_color = simple_blur(blur_radius);
+	if (blurrable > .5f) {
+		int blur_radius = int(floor(10.0f * depth));
+		if (blur_radius > 0)
+			current_color = simple_blur(blur_radius);
+	}
 
 	// Bloom (looks horrible)
 	//**************************************************************************************//

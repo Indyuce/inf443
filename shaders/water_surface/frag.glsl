@@ -161,7 +161,17 @@ vec3 get_wave_normal(vec3 position) {
     return normalize(vec3(dz_x / denom, dz_y / denom, 1));
 }
 
+void set_outputs(vec3 current_color, float depth_buffer) {
+    FragColor = vec4(current_color, 1.0f);
+    ExtraColor = vec4(depth_buffer, 0.0, 0.0, 0.0); // Output extra buffers
 
+    // Check whether fragment output is higher than threshold, if so output as brightness color
+    float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    if (brightness > 1.0)
+        BrightColor = vec4(FragColor.rgb, 1.0);
+    else
+        BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
+}
 
 // ----------------------------------------------------------------------------------
 // OPTIMISATION: avoid use of length() and normalize() or cache the results
@@ -169,6 +179,8 @@ vec3 get_wave_normal(vec3 position) {
 // ----------------------------------------------------------------------------------
 void main()
 {
+    float distance_to_water = length(fragment.position - camera_position);
+    float depth_buffer = get_depth_buffer(distance_to_water);
 
     // Height map shader for debug
     /***********************************************************/
@@ -176,25 +188,11 @@ void main()
         float p = fragment.position.z;
         vec3 color1 = vec3(0.012,0.478,0.871);
         vec3 color2 = vec3(0.012,0.898,0.718);
-        FragColor = vec4(p * color2 + (1 - p) * color1, 1.0);
-        return;
-    }
-
-    
-    // Compare to previous pass depth buffer.
-    // TODO This might be doable by just binding the depth buffer of FBO0 to FBO1
-    /***********************************************************/
-    float distance_to_water = length(fragment.position - camera_position);
-    float depth_buffer = get_depth_buffer(distance_to_water);
-    // Source: https://www.youtube.com/watch?v=GADTasvDOX4&t=386s (projective texture mapping)
-    vec2 clip_space_fixed = (clip_space.xy / clip_space.w) / 2.0f + .5f;
-    float previous_depth_buffer = texture(texture_extra, clip_space_fixed).x; 
-    if (previous_depth_buffer < depth_buffer) {
-        FragColor = texture(texture_scene, clip_space_fixed);
+        set_outputs(p * color2 + (1 - p) * color1, depth_buffer);
         return;
     }
     
-    // Start shader
+    // Main Shader
     /***********************************************************/
 
     // Prepare for refraction/reflection
@@ -211,7 +209,7 @@ void main()
         // ----------------------------------------------------------------------------------
         float total_attenuation_distance = 5.0f / (scale * water_attenuation_coefficient);
         if (distance_to_water > total_attenuation_distance) {
-            FragColor = vec4(fog_color, 1.0f);
+            set_outputs(fog_color, depth_buffer);
             return;
         }
 
@@ -262,7 +260,7 @@ void main()
             // This is the texture from the previous pass.
             // This is also the texture being used for refraction.
             // Source: https://www.youtube.com/watch?v=GADTasvDOX4&t=386s (projective texture mapping)
-            vec3 refraction_texture = texture(texture_scene, clip_space_fixed + refract_text_offset).xyz;
+            vec3 refraction_texture = texture(texture_scene, (clip_space.xy / clip_space.w) / 2.0f + .5f + refract_text_offset).xyz;
             // Reflect skybox onto water to find the reflection texture.
             vec3 reflexion_texture = texture(texture_skybox, reflect(I, N)).xyz; 
 
@@ -285,13 +283,5 @@ void main()
     
 	// Texture outputs
     /************************************************************/
-    FragColor = vec4(current_color, 1.0);
-	ExtraColor = vec4(depth_buffer, 0.0, 0.0, 0.0); // Output extra buffers
-
-    // check whether fragment output is higher than threshold, if so output as brightness color
-    float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if(brightness > 1.0)
-        BrightColor = vec4(FragColor.rgb, 1.0);
-    else
-        BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
+    set_outputs(current_color, depth_buffer);
 }
