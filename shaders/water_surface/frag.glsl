@@ -237,10 +237,15 @@ void main()
         
 		    vec3 N = get_wave_normal(fragment.position); // NORMAL CALCULATION
 
+            // Fake diffraction. This simply offsets the refraction texture by value
+            // given by the previous normal calculation.
+            // Source: https://www.youtube.com/watch?v=6B7IF6GOu7s&t=343s
+            vec2 refract_text_offset = N.xy * .05f;
+
             // This is the texture from the previous pass.
             // This is also the texture being used for refraction.
             // Source: https://www.youtube.com/watch?v=GADTasvDOX4&t=386s (projective texture mapping)
-            vec3 refraction_texture = texture(texture_scene, (clip_space.xy / clip_space.w) / 2.0f + .5f).xyz;
+            vec3 refraction_texture = texture(texture_scene, (clip_space.xy / clip_space.w) / 2.0f + .5f + refract_text_offset).xyz;
             // Reflect skybox onto water to find the reflection texture.
             vec3 reflexion_texture = texture(texture_skybox, reflect(I, N)).xyz; 
 
