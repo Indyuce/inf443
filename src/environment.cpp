@@ -35,6 +35,7 @@ void environment_structure::send_opengl_uniform(opengl_shader_structure const& s
 	opengl_uniform(shader, "light_color", light_color, expected);
 	opengl_uniform(shader, "light_direction", compute_direction(light_direction), expected);
 	opengl_uniform(shader, "fog_distance", fog_distance, expected);
+	opengl_uniform(shader, "bloom_threshold", bloom_threshold, expected);
 
 	// Player flashlight
 	opengl_uniform(shader, "flashlight_on", flashlight_on, expected);

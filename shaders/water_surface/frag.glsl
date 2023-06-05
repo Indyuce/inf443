@@ -65,6 +65,7 @@ uniform sampler2D texture_extra;
 uniform float sand_texture_scale;
 uniform float fog_distance;
 uniform float render_distance;
+uniform float bloom_threshold;
 
 // This shader uses Perlin noise to generate small bumps on
 // the water surface creating realistic specular highlights.
@@ -167,7 +168,7 @@ void set_outputs(vec3 current_color, float depth_buffer) {
 
     // Check whether fragment output is higher than threshold, if so output as brightness color
     float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if (brightness > 1.0)
+    if (brightness > bloom_threshold)
         BrightColor = vec4(FragColor.rgb, 1.0);
     else
         BrightColor = vec4(0.0, 0.0, 0.0, 1.0);

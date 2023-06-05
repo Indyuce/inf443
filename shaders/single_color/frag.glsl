@@ -2,7 +2,6 @@
 
 
 layout(location=0) out vec4 FragColor;
-layout(location=1) out vec4 ExtraColor;
 
 
 uniform vec3 color; // Uniform color of the object

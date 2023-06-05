@@ -295,7 +295,7 @@ void scene_structure::display_scene(vec3 const& camera_position)
 
 	// Draw terrain
 	// ***************************************** //
-	draw(implicit_surface.drawable_param.domain_box, environment);
+	//draw(implicit_surface.drawable_param.domain_box, environment);
 	draw(implicit_surface.drawable_param.shape, environment);
 
 	display_semi_transparent(camera_position);

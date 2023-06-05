@@ -22,6 +22,7 @@ struct environment_structure : environment_generic_structure {
 	float water_attenuation_coefficient = .12f;
 	float water_reflection_coefficient = .5f; // How much water will reflect when standing above surface
 	float fog_distance = 2900.0f;
+	float bloom_threshold = .7f;
 
 	// Direct illumination
 	float direct = 1.6f;

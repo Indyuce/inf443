@@ -114,11 +114,4 @@ void main()
     /************************************************************/
 	FragColor = vec4(current_color, material.alpha * color_image_texture.a * opacity_multiplier); // Output color, with the alpha component
 	ExtraColor = vec4(get_depth_buffer(attenuation_distance), 0.0, 0.0, 0.0);  // Output extra buffers
-
-	// check whether fragment output is higher than threshold, if so output as brightness color
-    float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if(brightness > 1.0)
-        BrightColor = vec4(FragColor.rgb, 1.0);
-    else
-        BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
 }
