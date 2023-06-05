@@ -31,9 +31,9 @@ void main()
 	float depth = texture(extra_texture, uv_frag).x;
 	vec3 current_color = texture(image_texture, uv_frag).xyz;
 	 
-	// Simple Blur TODO gaussian with multipass.
+	// Simple Blur TODO gaussian with multipass (separability)
 	//**************************************************************************************//
-	int blur_radius = int(floor(10.0f * depth));
+	int blur_radius = int(floor(0.0f * depth));
 	if (blur_radius > 0)
 		current_color = simple_blur(blur_radius);
 

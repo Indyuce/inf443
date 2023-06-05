@@ -10,6 +10,8 @@ in struct fragment_data
 
 } fragment;
 
+in vec4 clip_space;
+
 // Output of the fragment shader - output color
 layout(location=0) out vec4 FragColor;
 layout(location=1) out vec4 ExtraColor;
@@ -56,7 +58,8 @@ struct gerstner_wave {
     float speed;
 };
 
-uniform samplerCube image_skybox;
+uniform samplerCube texture_skybox;
+uniform sampler2D texture_scene;
 uniform sampler2D texture_sand;
 uniform float sand_texture_scale;
 uniform float fog_distance;
@@ -164,6 +167,7 @@ vec3 get_wave_normal(vec3 position) {
 // ----------------------------------------------------------------------------------
 void main()
 {
+
     // Height map shader for debug
     /***********************************************************/
     if (surf_height) {
@@ -175,7 +179,6 @@ void main()
     }
 
     vec3 current_color = vec3(0, 0, 0);
-    float opacity = 1.0;
 
     // Prepare for refraction/reflection
     float distance_to_water = length(fragment.position - camera_position);
@@ -195,7 +198,7 @@ void main()
             return;
         }
 
-		vec3 N = -get_wave_normal(fragment.position); // NORMAl CALCULATION.
+		vec3 N = -get_wave_normal(fragment.position); // NORMAL CALCULATION
         vec3 texture_coords = refract(I, N, water_optical_index);
 
         // Total reflection
@@ -208,7 +211,7 @@ void main()
 
         // Inside of Snell's window!!!
         else
-            current_color = texture(image_skybox, texture_coords).xyz;
+            current_color = texture(texture_skybox, texture_coords).xyz;
 
         // Absorption
         current_color = water_attenuation(current_color, distance_to_water);
@@ -231,13 +234,23 @@ void main()
             current_color = far_away_for_color;
 
         } else {
+        
+		    vec3 N = get_wave_normal(fragment.position); // NORMAL CALCULATION
+
+            // This is the texture from the previous pass.
+            // This is also the texture being used for refraction.
+            // Source: https://www.youtube.com/watch?v=GADTasvDOX4&t=386s (projective texture mapping)
+            vec3 refraction_texture = texture(texture_scene, (clip_space.xy / clip_space.w) / 2.0f + .5f).xyz;
+            // Reflect skybox onto water to find the reflection texture.
+            vec3 reflexion_texture = texture(texture_skybox, reflect(I, N)).xyz; 
+
             // Partial reflection - Water reflects at normal angles and refracts more at steep angles
-            // Opacity also corresponds to the angle steepness
-		    vec3 N = get_wave_normal(fragment.position); // NORMAl CALCULATION.
-            opacity = 1 - min(0.2f, pow(max(0, dot(N, -I)), 3)); // Fresnel effect. Source: https://www.youtube.com/watch?v=vTMEdHcKgM4&t=874s
-            opacity = max(opacity, fog_coefficient); // Fix fog.
-            current_color = texture(image_skybox, reflect(I, N)).xyz; // Water texture is reflection. TODO better handling of refraction with multipass.
-            current_color = mix(current_color, far_away_for_color, fog_coefficient);
+            // Reflectiveness also corresponds to the angle steepness
+            // Fresnel effect. Source: https://www.youtube.com/watch?v=vTMEdHcKgM4&t=874s
+            float transparency = min(0.2f, pow(max(0, dot(N, -I)), 3));
+
+            current_color = mix(reflexion_texture, refraction_texture, transparency); // Blend reflection and refraction
+            current_color = mix(current_color, far_away_for_color, fog_coefficient); // Apply fog
         }
     }
 
@@ -250,7 +263,7 @@ void main()
     
 	// Texture outputs
     /************************************************************/
-    FragColor = vec4(current_color, opacity); // Note: the last alpha component is not used here
+    FragColor = vec4(current_color, 1.0);
 	ExtraColor = vec4(get_depth_buffer(distance_to_water), 0.0, 0.0, 0.0); // Output extra buffers
 
     // check whether fragment output is higher than threshold, if so output as brightness color

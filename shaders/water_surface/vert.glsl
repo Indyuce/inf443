@@ -17,6 +17,8 @@ out struct fragment_data
     vec2 uv;       // vertex uv
 } fragment;
 
+out vec4 clip_space;
+
 // Uniform variables expected to receive from the C++ program
 uniform mat4 model; // Model affine transform matrix associated to the current shape
 uniform mat4 modelNormal; // Model without scaling used for the normal. modelNormal = transpose(inverse(model))
@@ -124,5 +126,6 @@ void main()
 
 	// gl_Position is a built-in variable which is the expected output of the vertex shader
 	// The projected position of the vertex in the normalized device coordinates
-	gl_Position = projection * view * vec4(wave_position.xyz, position.w); // gl_Position is the projected vertex position (in normalized device coordinates)
+    clip_space = projection * view * vec4(wave_position.xyz, position.w);
+	gl_Position = clip_space; // gl_Position is the projected vertex position (in normalized device coordinates)
 }

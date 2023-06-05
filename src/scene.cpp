@@ -84,7 +84,7 @@ void scene_structure::initialize()
 		project::path + "shaders/water_surface/vert.glsl",
 		project::path + "shaders/water_surface/frag.glsl");
 	water_surface.set_shaders(water_shader);
-	water_surface.set_textures(implicit_surface.drawable_param.shape.texture, skybox.texture);
+	water_surface.set_textures(implicit_surface.drawable_param.shape.texture, skybox.texture, multipass_rendering.fbo_pass_1.texture);
 
 	// Animation and models
 	// ***************************************** //
@@ -151,13 +151,15 @@ float scene_structure::random_offset() {
 
 void scene_structure::display_frame() {
 
+	// Initialisation
+	vec3 const camera_position = environment.get_camera_position();
+	multipass_rendering.update_screen_size(window.width, window.height);
+
 	// ************************************** //
 	// First rendering pass
 	// ************************************* //
-	multipass_rendering.update_screen_size(window.width, window.height);
-
 	multipass_rendering.start_pass_1(); // 1- Activate the rendering on the FBO
-	display_scene();
+	display_scene(camera_position);
 	multipass_rendering.end_pass_1(); // 3- Stop the rendering on the FBO
 
 	// ************************************** //
@@ -165,13 +167,21 @@ void scene_structure::display_frame() {
 	// ************************************* //
 	multipass_rendering.start_pass_2();
 	multipass_rendering.draw_pass_2(environment); // Apply the screen effect at that time
+	water_surface.update_positions_and_draw(camera_position, environment);
 	multipass_rendering.end_pass_2();
+
+	// ************************************** //
+	// Third rendering pass
+	// ************************************* //
+	multipass_rendering.start_pass_3();
+	multipass_rendering.draw_pass_3(environment);
+	multipass_rendering.end_pass_3();
 }
 
 
 // This function is called permanently at every new frame
 // Note that you should avoid having costly computation and large allocation defined there. This function is mostly used to call the draw() functions on pre-existing data.
-void scene_structure::display_scene()
+void scene_structure::display_scene(vec3 const& camera_position)
 {
 	// Draw skybox
 	// Must be called before drawing the other shapes and without writing in the Depth Buffer
@@ -187,7 +197,6 @@ void scene_structure::display_scene()
 
 	// Draw fishes
 	// ***************************************** //
-	vec3 const camera_position = environment.get_camera_position();
 	for (int i = 0;i < fish_manager.fishes.size();i++) {
 		fish fish = fish_manager.fishes[i];
 		
@@ -327,15 +336,6 @@ void scene_structure::display_semi_transparent(vec3 const& camera_position)
 
 		draw(*drawable, environment);
 	}
-
-	// Draw water surface
-	// ***************************************** //
-	water_surface.update_positions(camera_position);
-	draw(water_surface.center, environment);
-	draw(water_surface.positive_x, environment);
-	draw(water_surface.negative_x, environment);
-	draw(water_surface.positive_y, environment);
-	draw(water_surface.negative_y, environment);
 
 	// Final step
 	// ***************************************** //

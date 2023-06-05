@@ -32,10 +32,10 @@ struct water_surface_structure
 
 	void initialize_models();
 
-	void update_positions(vec3 const& camera_position);
+	void update_positions_and_draw(vec3 const& camera_position, environment_generic_structure& environment);
 
 	void set_shaders(opengl_shader_structure& shader);
 
-	void set_textures(opengl_texture_image_structure& sand, opengl_texture_image_structure& skybox);
+	void set_textures(opengl_texture_image_structure& sand, opengl_texture_image_structure& skybox, opengl_texture_image_structure& texture_scene);
 };
 

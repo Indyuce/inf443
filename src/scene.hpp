@@ -65,7 +65,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 
 	void initialize(); // Standard initialization to be called before the animation loop
 	void display_frame();
-	void display_scene();
+	void display_scene(vec3 const& camera_position);
 	// The frame display to be called within the animation loop
 	void display_semi_transparent(vec3 const& camera_position); // Display semi transparent tiles
 	void display_gui(); // The display of the GUI, also called within the animation loop
