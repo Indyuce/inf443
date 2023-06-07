@@ -15,8 +15,8 @@ fish_manager::fish_manager()
 	this->separation_coef = 1.0f;
 	this->fish_radius = 60.0f;
 	this->fish_speed = 0.5f;
-	this->obstacle_radius = 60.0f;
-	this->obstacle_coef = 0.1f;
+	this->obstacle_radius = 1.0f;
+	this->obstacle_coef = .05f;
 
 	grid_filled = false;
 	this->grid_step = 100;
@@ -58,24 +58,19 @@ void fish_manager::refresh(field_function_structure field, float t)
 	for (int i = 0; i < fishes.size(); i++)
 	{
 		fish& current = fishes[i];
-		// Offset of one to be able to calculate the gradient.
-		int posX = (int)(current.position.x + domain_x / 2);
-		posX = posX < 0 ? 0 : posX >= domain_x - 1 ? domain_x - 2
-													: posX;
-		int posY = (int)(current.position.y + domain_y / 2);
-		posY = posY < 0 ? 0 : posY >= domain_y - 1 ? domain_y - 2
-													: posY;
-		int posZ = (int)(current.position.z + domain_z / 2);
-		posZ = posZ < 0 ? 0 : posZ >= domain_z - 1 ? domain_z - 2
-												   : posZ;
-		// A positive field value means that the fish is inside a wall.
-		if (field(vec3(posX, posY, posZ)) > -obstacle_radius)
-		{
-			float val = field(vec3(posX, posY, posZ));
-			// std::cout << val << std::endl;
 
-			// vec3 grad = cgp::normalize(vec3{field(vec3(posX+1,posY,posZ))-val,field(vec3(posX,posY+1,posZ))-val,field(vec3(posX,posY,posZ+1))-val});
-			// fish.direction-= grad/(-val)*obstacle_coef;
+		// A positive field value means that the fish is inside a wall.
+		float val = field(current.position);
+		if (val > -obstacle_radius) {
+
+			float const dr = 10.0f;
+			float const grad_x = field(current.position + dr * vec3(1, 0, 0)) - val;
+			float const grad_y = field(current.position + dr * vec3(0, 1, 0)) - val;
+			float const grad_z = field(current.position + dr * vec3(0, 0, 1)) - val;
+
+			vec3 grad = vec3(grad_x, grad_y, grad_z);
+			if (cgp::norm(grad) > .001)
+				current.direction -= cgp::normalize(grad) * obstacle_coef;
 		}
 		cgp::vec3 separation = calculate_separation(current);
 		cgp::vec3 alignement = calculate_alignement(current);
@@ -87,7 +82,7 @@ void fish_manager::refresh(field_function_structure field, float t)
 		current.direction += out_of_bound_force;
 		if (ticks % 10 == 0)
 			current.direction += {0.05 * (distrib(gen) - 0.5), 0.05 * (distrib(gen) - 0.5), 0.05 * (distrib(gen) - 0.5)};
-		current.direction.z *= 0.99f; // Attenuates vertical velocity in the long run.
+		current.direction.z *= 0.999f; // Attenuates vertical velocity in the long run.
 		current.direction = cgp::normalize(current.direction);
 		current.position = current.position + (fish_speed * current.direction);
 	}
