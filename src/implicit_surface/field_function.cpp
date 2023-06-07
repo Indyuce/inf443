@@ -63,7 +63,7 @@ field_function_structure::field_function_structure() {
     //cave_height_max = cave_height_1 * 2.0f;
 
     floor_perlin = perlin_noise_params(0.175f, 1.25f, 2, .005f, 1.0f, -2.3f);
-    cave_perlin = perlin_noise_params(0.31f, 2.81f, 3, .0015f, 6.8f, 4.43f);
+    cave_perlin = perlin_noise_params(0.31f, 2.81f, 3, .0015f, 7.28f, 4.56f);
     //rock_color_perlin = perlin_noise_params(0.4f, 3.0f, 4, .05f, 1.0f, 0.0f);
     //mossy_rocks_perlin = perlin_noise_params(0.4f, 3.0f, 2, .05f, 10.0f, 3.0f);
 }
