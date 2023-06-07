@@ -60,6 +60,7 @@ struct environment_structure : environment_generic_structure {
 
 	mat4 camera_view; // The position/orientation of a camera that can rotates freely around a specific position
 	mat4 camera_projection; // A projection structure (perspective or orthogonal projection)
+	bool revert;
 
 	// Additional uniforms that can be attached to the environment if needed (empty by default)
 	uniform_generic_structure uniform_generic;

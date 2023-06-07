@@ -84,7 +84,7 @@ void scene_structure::initialize()
 		project::path + "shaders/water_surface/vert.glsl",
 		project::path + "shaders/water_surface/frag.glsl");
 	water_surface.set_shaders(water_shader);
-	water_surface.set_textures(implicit_surface.drawable_param.shape.texture, skybox.texture, multipass_rendering.fbo_pass_1.texture, multipass_rendering.fbo_pass_1.texture_extra);
+	water_surface.set_textures(implicit_surface.drawable_param.shape.texture, skybox.texture, multipass_rendering.fbo_pass_2.texture, multipass_rendering.fbo_pass_2.texture_extra);
 
 	// Animation and models
 	// ***************************************** //
@@ -149,40 +149,55 @@ float scene_structure::random_offset() {
 	return 2 * rand_double(rand_gen) - 1.0f;
 }
 
+void scene_structure::symetrize_camera_view() {
+	camera_control.camera_model.center_of_rotation *= vec3(1, 1, -1);
+	camera_control.camera_model.pitch *= -1.0f;
+	camera_control.update(environment.camera_view);
+}
+
 void scene_structure::display_frame() {
 
 	// Initialisation
-	vec3 const camera_position = environment.get_camera_position();
 	multipass_rendering.update_screen_size(window.width, window.height);
 
 	// ************************************** //
 	// First rendering pass
 	// ************************************* //
-	multipass_rendering.start_pass_1(); // 1- Activate the rendering on the FBO
-	display_scene(camera_position);
-	multipass_rendering.end_pass_1(); // 3- Stop the rendering on the FBO
+	//multipass_rendering.start_pass_1(); // 1- Activate the rendering on the FBO
+	//symetrize_camera_view();
+	//display_scene();
+	//symetrize_camera_view();
+	//multipass_rendering.end_pass_1(); // 3- Stop the rendering on the FBO
 
 	// ************************************** //
 	// Second rendering pass
 	// ************************************* //
-	multipass_rendering.start_pass_2();
-	multipass_rendering.draw_pass_2(environment); // Apply the screen effect at that time
-	water_surface.update_positions_and_draw(camera_position, environment);
-	multipass_rendering.end_pass_2();
+	multipass_rendering.start_pass_2(); // 1- Activate the rendering on the FBO
+	display_scene();
+	multipass_rendering.end_pass_2(); // 3- Stop the rendering on the FBO
 
 	// ************************************** //
 	// Third rendering pass
 	// ************************************* //
 	multipass_rendering.start_pass_3();
-	multipass_rendering.draw_pass_3(environment);
+	multipass_rendering.draw_pass_3(environment); // Apply the screen effect at that time
+	water_surface.update_positions_and_draw(environment.get_camera_position(), environment);
 	multipass_rendering.end_pass_3();
-}
 
+	// ************************************** //
+	// Fourth rendering pass
+	// ************************************* //
+	multipass_rendering.start_pass_4();
+	multipass_rendering.draw_pass_4(environment);
+	multipass_rendering.end_pass_4();
+}
 
 // This function is called permanently at every new frame
 // Note that you should avoid having costly computation and large allocation defined there. This function is mostly used to call the draw() functions on pre-existing data.
-void scene_structure::display_scene(vec3 const& camera_position)
-{
+void scene_structure::display_scene() {
+
+	vec3 const camera_position = environment.get_camera_position();
+
 	// Draw skybox
 	// Must be called before drawing the other shapes and without writing in the Depth Buffer
 	// ***************************************** //
@@ -379,6 +394,7 @@ void scene_structure::display_gui()
 		ImGui::Checkbox("Stylish Borders", &environment.style_borders);
 		ImGui::SliderFloat("Stylish Borders Exp", &environment.style_borders_exp, .5f, 3.0f);
 		ImGui::Checkbox("Move Sun", &environment.move_sun);
+		ImGui::Checkbox("Revert Camera", &environment.revert);
 	}
 
 	if (ImGui::CollapsingHeader("Atmosphere Shader")) {
