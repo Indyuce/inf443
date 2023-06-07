@@ -27,7 +27,7 @@ void scene_structure::initialize()
 
 	// Load skybox
 	// ***************************************** //
-	image_structure image_skybox_template = image_load_file("assets/skybox/skybox_01.jpg"); // hdr_01.png OR skybox_01.jpg
+	image_structure image_skybox_template = image_load_file("assets/skybox/hdr_01.png"); // hdr_01.png OR skybox_01.jpg
 	std::vector<image_structure> image_grid = image_split_grid(image_skybox_template, 4, 3);
 	skybox.initialize_data_on_gpu();
 	skybox.texture.initialize_cubemap_on_gpu(
@@ -264,6 +264,8 @@ void scene_structure::display_scene(vec3 const& camera_position)
 	// Update time
 	// ***************************************** //
 	timer.update();
+	if (environment.move_sun)
+		environment.light_direction.y += .1f;
 
 	// Update and draw particles
 	// ***************************************** //
@@ -374,6 +376,19 @@ void scene_structure::display_gui()
 
 	if (ImGui::CollapsingHeader("Other")) {
 		ImGui::Checkbox("Cinematic Camera", &camera_movement.cinematic_mode);
+		ImGui::Checkbox("Stylish Borders", &environment.style_borders);
+		ImGui::SliderFloat("Stylish Borders Exp", &environment.style_borders_exp, .5f, 3.0f);
+		ImGui::Checkbox("Move Sun", &environment.move_sun);
+	}
+
+	if (ImGui::CollapsingHeader("Atmosphere Shader")) {
+		ImGui::Checkbox("Enable Custom Shader", &environment.atmos_shader);
+		ImGui::SliderFloat2("Rayleigh Scattering Coefficient", &environment.kRlh[0], 0.0f, 1.0f);
+		ImGui::SliderFloat("Sun Intensity", &environment.iSun, 0.0f, 50.0f);
+		ImGui::SliderFloat("Mie Scattering Coefficient * 1E8", &environment.kMie, 1, 100);
+		ImGui::SliderFloat("Rayleigh Scale Height", &environment.shRlh, 1e3, 30e3);
+		ImGui::SliderFloat("Mie Scale Height", &environment.shMie, 500.0f, 3.0e3);
+		ImGui::SliderFloat("Mie Preferred Scattering Direction", &environment.psdMie, .1f, 2.0f);
 	}
 }
 

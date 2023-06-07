@@ -6,6 +6,9 @@ uniform sampler2D image_texture;
 uniform sampler2D extra_texture;
 uniform sampler2D bright_texture;
 
+uniform bool style_borders;
+uniform float style_borders_exp;
+
 layout(location=0) out vec4 FragColor;
 
 vec3 texture_blur(int blur_radius) {
@@ -64,6 +67,9 @@ void main()
     //current_color += bloom_color; // additive blending
     //vec3 result = vec3(1.0f) - exp(-current_color * exposure); // tone mapping
     //current_color = pow(result, vec3(1.0f / gamma)); // also gamma correct while we're at it
+
+	// Black borders
+	if (style_borders) current_color *= 1.0f - pow(length(uv_frag - .5f), style_borders_exp);
 
 	FragColor = vec4(current_color, 1.0f);
 }

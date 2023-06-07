@@ -4,7 +4,7 @@
 
 struct camera_movement_structure {
 
-	bool cinematic_mode;
+	bool cinematic_mode = true;
 	float vertical_speed, side_speed, front_speed;
 
 	// Dev parameters

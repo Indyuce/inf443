@@ -24,6 +24,12 @@ vec3 compute_direction(vec2 const& dir) {
 	return compute_direction(dir.x, dir.y);
 }
 
+vec3 environment_structure::get_nice_fog_color() {
+	if (!atmos_shader) return fog_color;
+
+
+}
+
 void environment_structure::send_opengl_uniform(opengl_shader_structure const& shader, bool expected) const
 {
 
@@ -50,12 +56,23 @@ void environment_structure::send_opengl_uniform(opengl_shader_structure const& s
 	opengl_uniform(shader, "scale", scale, expected);
 	opengl_uniform(shader, "water_attenuation_coefficient", water_attenuation_coefficient, expected);
 
+	// Atmosphere
+	opengl_uniform(shader, "kRlh", kRlh, expected);
+	opengl_uniform(shader, "iSun", iSun, expected);
+	opengl_uniform(shader, "kMie", kMie * .00000001f, expected);
+	opengl_uniform(shader, "shRlh", shRlh, expected);
+	opengl_uniform(shader, "shMie", shMie, expected);
+	opengl_uniform(shader, "psdMie", psdMie, expected);
+
 	// Extra
 	opengl_uniform(shader, "projection", camera_projection, expected);
 	opengl_uniform(shader, "view", camera_view, expected);
 	opengl_uniform(shader, "ridge_coefficient", terrain_ridges, expected);
 	opengl_uniform(shader, "water_optical_index", water_optical_index, expected);
 	opengl_uniform(shader, "sand_texture_scale", sand_texture_scale, expected);
+	opengl_uniform(shader, "atmos_shader", atmos_shader, expected);
+	opengl_uniform(shader, "style_borders", style_borders, expected);
+	opengl_uniform(shader, "style_borders_exp", style_borders_exp, expected);
 
 	// Extra uniforms
 	uniform_generic.send_opengl_uniform(shader, false);

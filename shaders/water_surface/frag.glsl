@@ -1,5 +1,9 @@
 #version 330 core
 
+#define PI 3.141592
+#define iSteps 16
+#define jSteps 8
+
 // Inputs coming from the vertex shader
 in struct fragment_data
 {
@@ -33,6 +37,8 @@ uniform float ambiant;
 uniform float diffuse;
 uniform float specular;
 uniform int specular_exp;
+uniform float direct;
+uniform int direct_exp;
 
 uniform float flashlight;
 uniform int flashlight_exp;
@@ -66,6 +72,139 @@ uniform float sand_texture_scale;
 uniform float fog_distance;
 uniform float render_distance;
 uniform float bloom_threshold;
+
+// Atmosphere shader
+// References:
+// - https://github.com/wwwtyro/glsl-atmosphere (adapted from here)
+// - https://www.youtube.com/watch?v=DxfEbulyFcY&t=794s (calculations)
+/***************************************************************************************************/
+
+uniform float psdMie;
+uniform float shMie;
+uniform float shRlh;
+uniform float kMie;
+uniform vec3 kRlh;
+uniform float iSun;
+uniform bool atmos_shader;
+
+vec2 rsi(vec3 r0, vec3 rd, float sr) {
+    // ray-sphere intersection that assumes
+    // the sphere is centered at the origin.
+    // No intersection when result.x > result.y
+    float a = dot(rd, rd);
+    float b = 2.0 * dot(rd, r0);
+    float c = dot(r0, r0) - (sr * sr);
+    float d = (b*b) - 4.0*a*c;
+    if (d < 0.0) return vec2(1e5,-1e5);
+    return vec2(
+        (-b - sqrt(d))/(2.0*a),
+        (-b + sqrt(d))/(2.0*a)
+    );
+}
+
+vec3 atmosphere(vec3 fragment_direction, bool sun_visible) {
+
+    // Initialize variables
+    vec3 r = fragment_direction.xzy;
+    vec3 pSun = -light_direction.xzy;
+    vec3 r0 = vec3(0, 0, 6371e3).xzy;
+    float rPlanet = 6371e3;
+    float rAtmos = 6471e3;
+
+    // Calculate the step size of the primary ray.
+    vec2 p = rsi(r0, r, rAtmos);
+    if (p.x > p.y) return vec3(1, 1, 1);
+    p.y = min(p.y, rsi(r0, r, rPlanet).x);
+    float iStepSize = (p.y - p.x) / float(iSteps);
+
+    // Initialize the primary ray time.
+    float iTime = 0.0;
+
+    // Initialize accumulators for Rayleigh and Mie scattering.
+    vec3 totalRlh = vec3(0,0,0);
+    vec3 totalMie = vec3(0,0,0);
+
+    // Initialize optical depth accumulators for the primary ray.
+    float iOdRlh = 0.0;
+    float iOdMie = 0.0;
+
+    // Calculate the Rayleigh and Mie phases.
+    float mu = dot(r, pSun);
+    float mumu = mu * mu;
+    float g = psdMie;
+    float gg = g * g;
+    float pRlh = 3.0 / (16.0 * PI) * (1.0 + mumu);
+    float pMie = 3.0 / (8.0 * PI) * ((1.0 - gg) * (mumu + 1.0)) / (pow(1.0 + gg - 2.0 * mu * g, 1.5) * (2.0 + gg));
+
+    // Sample the primary ray.
+    for (int i = 0; i < iSteps; i++) {
+
+        // Calculate the primary ray sample position.
+        vec3 iPos = r0 + r * (iTime + iStepSize * 0.5);
+
+        // Calculate the height of the sample.
+        float iHeight = length(iPos) - rPlanet;
+
+        // Calculate the optical depth of the Rayleigh and Mie scattering for this step.
+        float odStepRlh = exp(-iHeight / shRlh) * iStepSize;
+        float odStepMie = exp(-iHeight / shMie) * iStepSize;
+
+        // Accumulate optical depth.
+        iOdRlh += odStepRlh;
+        iOdMie += odStepMie;
+
+        // Calculate the step size of the secondary ray.
+        float jStepSize = rsi(iPos, pSun, rAtmos).y / float(jSteps);
+
+        // Initialize the secondary ray time.
+        float jTime = 0.0;
+
+        // Initialize optical depth accumulators for the secondary ray.
+        float jOdRlh = 0.0;
+        float jOdMie = 0.0;
+
+        // Sample the secondary ray.
+        for (int j = 0; j < jSteps; j++) {
+
+            // Calculate the secondary ray sample position.
+            vec3 jPos = iPos + pSun * (jTime + jStepSize * 0.5);
+
+            // Calculate the height of the sample.
+            float jHeight = length(jPos) - rPlanet;
+
+            // Accumulate the optical depth.
+            jOdRlh += exp(-jHeight / shRlh) * jStepSize;
+            jOdMie += exp(-jHeight / shMie) * jStepSize;
+
+            // Increment the secondary ray time.
+            jTime += jStepSize;
+        }
+
+        // Calculate attenuation.
+        vec3 attn = exp(-(kMie * (iOdMie + jOdMie) + kRlh * (iOdRlh + jOdRlh)));
+
+        // Accumulate scattering.
+        totalRlh += odStepRlh * attn;
+        totalMie += odStepMie * attn;
+
+        // Increment the primary ray time.
+        iTime += iStepSize;
+
+    }
+
+    // Atmosphere color
+    vec3 atmos_color = iSun * (pRlh * kRlh * totalRlh + pMie * kMie * totalMie);
+    atmos_color = 1.0 - exp(-1.0 * atmos_color); // Fix exposition
+
+    // Direct sunlight
+    if (sun_visible) {
+        float direct_magnitude = direct * pow(max(dot(fragment_direction, -light_direction), 0), direct_exp);
+        atmos_color += direct_magnitude * light_color;
+    }
+
+    // Calculate and return the final color.
+    return atmos_color;
+}
 
 // This shader uses Perlin noise to generate small bumps on
 // the water surface creating realistic specular highlights.
@@ -143,7 +282,6 @@ float get_depth_buffer(float frag_distance) {
 
 // Main water surface Shader
 /***************************************************************************************************/
-
 vec3 water_attenuation(vec3 current_color, float attenuation_distance) {
     return mix(fog_color, current_color, exp(-water_attenuation_coefficient * scale * attenuation_distance));
 }
@@ -172,6 +310,17 @@ void set_outputs(vec3 current_color, float depth_buffer) {
         BrightColor = vec4(FragColor.rgb, 1.0);
     else
         BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
+}
+
+// Better handling of fog with atmospheric shader
+vec3 get_fog_color(vec3 direction) {
+
+    // Default fog color
+    if (!atmos_shader) return vec3(1.0f, 1.0f, 1.0f);
+
+    // Better fog.
+    vec3 fixed_direction = normalize(vec3(direction.xy, 0));
+    return atmosphere(fixed_direction, false);
 }
 
 // ----------------------------------------------------------------------------------
@@ -227,7 +376,7 @@ void main()
 
         // Inside of Snell's window!!!
         else
-            current_color = texture(texture_skybox, texture_coords).xyz;
+            current_color = atmos_shader ? atmosphere(texture_coords, true) : texture(texture_skybox, texture_coords).xyz;
 
         // Absorption
         current_color = water_attenuation(current_color, distance_to_water);
@@ -237,9 +386,8 @@ void main()
     /***********************************************************/
     else {
         
-        // TODO atmosphere shader?
         float fog_coefficient = min(distance_to_water / fog_distance, 1.0f);
-        vec3 far_away_for_color = vec3(1.0f, 1.0f, 1.0f);
+        vec3 render_fog = get_fog_color(I);
 
         // ----------------------------------------------------------------------------------
         // OPTIMISATION: over 95% fog attenuation, just display far-away air fog.
@@ -247,7 +395,7 @@ void main()
         // However, a very small fog distance can easily halve GPU utilization.
         // ----------------------------------------------------------------------------------
         if (fog_coefficient > .95) {
-            current_color = far_away_for_color;
+            current_color = render_fog;
 
         } else {
         
@@ -263,7 +411,7 @@ void main()
             // Source: https://www.youtube.com/watch?v=GADTasvDOX4&t=386s (projective texture mapping)
             vec3 refraction_texture = texture(texture_scene, (clip_space.xy / clip_space.w) / 2.0f + .5f + refract_text_offset).xyz;
             // Reflect skybox onto water to find the reflection texture.
-            vec3 reflexion_texture = texture(texture_skybox, reflect(I, N)).xyz; 
+            vec3 reflexion_texture = atmos_shader ? atmosphere(reflect(I, N), true) : texture(texture_skybox, reflect(I, N)).xyz;
 
             // Partial reflection - Water reflects at normal angles and refracts more at steep angles
             // Reflectiveness also corresponds to the angle steepness
@@ -271,7 +419,7 @@ void main()
             float transparency = min(0.2f, pow(max(0, dot(N, -I)), 3));
 
             current_color = mix(reflexion_texture, refraction_texture, transparency); // Blend reflection and refraction
-            current_color = mix(current_color, far_away_for_color, fog_coefficient); // Apply fog
+            current_color = mix(current_color, render_fog, fog_coefficient); // Apply fog
         }
     }
 

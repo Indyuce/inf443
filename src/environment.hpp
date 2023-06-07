@@ -23,7 +23,19 @@ struct environment_structure : environment_generic_structure {
 	float water_reflection_coefficient = .5f; // How much water will reflect when standing above surface
 	float fog_distance = 2900.0f;
 	float bloom_threshold = .7f;
+	bool style_borders = true;
+	float style_borders_exp = 1.4f;
+	bool move_sun = false;
 
+	// Atmosphere
+	vec3 kRlh = vec3(5.5e-6, 13.0e-6, 22.4e-6); // Rayleigh scattering coefficient
+	float iSun = 22.0; // intensity of the sun
+	float kMie = 21; // Mie scattering coefficient
+	float shRlh = 8e3; // Rayleigh scale height
+	float shMie = 1.2e3; // Mie scale height
+	float psdMie = 0.758f; // Mie preferred scattering direction
+	bool atmos_shader = false; // Enabled?
+	 
 	// Direct illumination
 	float direct = 1.6f;
 	int direct_exp = 800;
@@ -54,6 +66,8 @@ struct environment_structure : environment_generic_structure {
 
 	vec3 get_camera_position() const;
 	
+	vec3 get_nice_fog_color();
+
 	void send_opengl_uniform(opengl_shader_structure const& shader, bool expected = true) const override;
 };
 
