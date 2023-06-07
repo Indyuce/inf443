@@ -52,7 +52,7 @@ void environment_structure::send_opengl_uniform(opengl_shader_structure const& s
 	// Water & Attenuation
 	opengl_uniform(shader, "fog_color", fog_color, expected);
 	opengl_uniform(shader, "surf_height", surf_height, expected);
-	opengl_uniform(shader, "floor_level", floor_level, expected);
+	opengl_uniform(shader, "floor_level", ground_level, expected);
 	opengl_uniform(shader, "scale", scale, expected);
 	opengl_uniform(shader, "water_attenuation_coefficient", water_attenuation_coefficient, expected);
 

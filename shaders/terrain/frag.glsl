@@ -42,6 +42,7 @@ struct phong_structure {
 // Settings for texture display
 struct texture_settings_structure {
 	bool use_texture;       // Switch the use of texture on/off
+	bool is_sand;           // If sand, sand can turn into stone if gardient is not vertical
 	bool use_normal_map;    // Switch the use of normal map inside of fragment shader.
 	bool texture_inverse_v; // Reverse the texture in the v component (1-v)
 	bool two_sided;         // Display a two-sided illuminated surface (doesn't work on Mac)
@@ -71,8 +72,14 @@ uniform vec3 fog_color;
 uniform float scale;
 uniform float water_attenuation_coefficient;
 
+// Sand texture
 uniform sampler2D image_texture;
 uniform sampler2D normal_map;
+
+// Rock texture
+uniform sampler2D rock_texture;
+uniform sampler2D rock_normal;
+
 uniform float ridge_coefficient;
 
 // This blends two normals by applying to the second normal
@@ -115,12 +122,29 @@ void main()
     if (material.texture_settings.use_texture) {
 	    vec2 uv_image       = fragment.uv;
 	    vec3 texture_color  = texture(image_texture, uv_image).xyz;
-        fragment_color      = fragment_color * material.color * texture_color;
+
+        // Special rock shader
+        //**************************************//
+        float rockiness = 0;
+        if (material.texture_settings.is_sand) {
+            rockiness = 1.0f - pow(max(0.0f, dot(N, vec3(0, 0, 1))), 3.0f);
+            texture_color = mix(texture_color, texture(rock_texture, uv_image).xyz, rockiness);
+        }
+
+        // Finally apply color
+        fragment_color = fragment_color * material.color * texture_color;
 
         if (material.texture_settings.use_normal_map) {
             vec3 repacked   = (N + 1.0f) / 2.0f;
             vec3 map_normal = texture(normal_map, uv_image).xyz;
-            N               = NormalBlend_RNM(repacked, map_normal);
+            
+            // Special rock shader
+            //**************************************//
+            if (material.texture_settings.is_sand)
+                map_normal = mix(map_normal, texture(rock_normal, uv_image).xyz, rockiness);
+
+            // Finally apply normal
+            N = NormalBlend_RNM(repacked, map_normal);
         }
     }
 

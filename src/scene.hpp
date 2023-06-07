@@ -47,6 +47,8 @@ struct scene_structure : cgp::scene_inputs_generic {
 	cgp::skybox_drawable skybox;
 	cgp::skybox_drawable underwater_skybox;
 
+	mesh_drawable test_drawable;
+
 	// Terrain
 	implicit_surface_structure implicit_surface; // Structures used for the implicit surface (*)
 	field_function_structure field_function;     // A Parametric function used to generate the discrete field (*)

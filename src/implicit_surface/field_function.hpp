@@ -34,8 +34,8 @@ struct perlin_noise_params
 //   with noise: a Perlin noise
 // The operator()(vec3 p) allows to query a value of the function at arbitrary point in space
 struct field_function_structure {
-	float floor_level;
-	float floor_level_2;
+	float ground_level;
+	float floor_1_level;
 
 	// Query the value of the function at any point p
 	float operator()(cgp::vec3 const& p) const;
@@ -44,7 +44,7 @@ struct field_function_structure {
 	//cgp::vec3 uv_at(cgp::vec3 const& pos) const;
 
 	// Query color of terrain at any point p
-	cgp::vec3 color_at(cgp::vec3 const& pos) const;
+	//cgp::vec3 color_at(cgp::vec3 const& pos) const;
 
 	/*
 	* Perlin noise is added to the total noise level to generate the floor level at z close to 0
@@ -59,12 +59,11 @@ struct field_function_structure {
 	* Value of d
 	*/
 	float floor_att_dist;
-	//float cave_height_1;
 	//float cave_height_max;
 	//float terrace_period;
 
 	perlin_noise_params floor_perlin;
-	//perlin_noise_params cave_perlin;
+	perlin_noise_params cave_perlin;
 	//perlin_noise_params rock_color_perlin;
 	//perlin_noise_params mossy_rocks_perlin;
 

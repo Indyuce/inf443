@@ -15,17 +15,17 @@ fish_manager::fish_manager()
 	this->separation_coef = 1.0f;
 	this->fish_radius = 60.0f;
 	this->fish_speed = 0.5f;
-	this->obstacle_radius = 4.0f;
-	this->obstacle_coef = 0.04f;
+	this->obstacle_radius = 60.0f;
+	this->obstacle_coef = 0.1f;
 
 	grid_filled = false;
 	this->grid_step = 100;
 }
 
-void fish_manager::initialize(vec3 domain, float floor_level, std::string project_path) {
+void fish_manager::initialize(vec3 domain, float ground_level, std::string project_path) {
 	domain_x = domain.x;
 	domain_y = domain.y;
-	domain_z = -floor_level;
+	domain_z = -ground_level;
 
 	float scales[5] = { 4.5f, 4.5f, 9.0f, 4.5f, 35.0f };
 

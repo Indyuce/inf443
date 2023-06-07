@@ -9,7 +9,7 @@ struct environment_structure : environment_generic_structure {
 
 	// Water
 	float water_level = 0.0f;
-	float floor_level = -200.0f;
+	float ground_level = -400.0f;
 	vec3 fog_color = { 0.016f, 0.659f, 0.878f };
 	bool surf_height; // Boolean to enable height-based water shading
 	float water_optical_index = 1.332f; // Optical ratio of water
@@ -42,7 +42,7 @@ struct environment_structure : environment_generic_structure {
 
 	// Player Flashlight
 	bool flashlight_on = false;
-	float flashlight = 2.41f;
+	float flashlight = 1.6f;
 	int flashlight_exp = 33;
 	float flashlight_dist = 10.0f;
 
@@ -53,8 +53,8 @@ struct environment_structure : environment_generic_structure {
 
 	// Domain and physics
 	struct { 
-		int resolution = 1;
-		cgp::vec3 length = { 1000, 1000, 50 };
+		int resolution = 4;
+		cgp::vec3 length = { 1000, 1000, 300 };
 	} domain;
 	float scale = 0.02f;
 

@@ -24,74 +24,41 @@ uniform mat4 projection; // Projection (perspective or orthogonal) matrix of the
 
 uniform mat4 modelNormal; // Model without scaling used for the normal. modelNormal = transpose(inverse(model))
 
+// Coefficients of phong illumination model
+struct phong_structure {
+	float ambient;      
+	float diffuse;
+	float specular;
+	float specular_exponent;
+};
+
+// Settings for texture display
+struct texture_settings_structure {
+	bool use_texture;       // Switch the use of texture on/off
+	bool is_sand;           // If sand, sand can turn into stone if gardient is not vertical
+	bool use_normal_map;    // Switch the use of normal map inside of fragment shader.
+	bool texture_inverse_v; // Reverse the texture in the v component (1-v)
+	bool two_sided;         // Display a two-sided illuminated surface (doesn't work on Mac)
+};
+
+// Material of the mesh (using a Phong model)
+struct material_structure
+{
+	vec3 color;  // Uniform color of the object
+	float alpha; // alpha coefficient
+
+	phong_structure phong;                       // Phong coefficients
+	texture_settings_structure texture_settings; // Additional settings for the texture
+}; 
+
+uniform material_structure material;
+
 uniform sampler2D height_map;
+uniform sampler2D rock_height;
+
 uniform float ridge_coefficient;
 uniform float sand_texture_scale;
 uniform float time;
-
-// This shader uses Perlin noise to generate SMALL variations
-// in sand height as if it was being moved with water.
-//
-// References
-// - Simplex 2D apdated from https://gist.github.com/patriciogonzalezvivo/670c22f3966e662d2f83
-// - Perlin noise taken from CGP
-/***************************************************************************************************/
-vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
-
-struct perlin_noise_params
-{
-	float persistency;
-	float frequency_gain;
-	int octave;
-	float scale;
-	float mult;
-    float speed;
-};
-
-float snoise(vec2 v) {
-    const vec4 C = vec4(0.211324865405187, 0.366025403784439,
-        -0.577350269189626, 0.024390243902439);
-    vec2 i  = floor(v + dot(v, C.yy) );
-    vec2 x0 = v -   i + dot(i, C.xx);
-    vec2 i1;
-    i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
-    vec4 x12 = x0.xyxy + C.xxzz;
-    x12.xy -= i1;
-    i = mod(i, 289.0);
-    vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 ))
-    + i.x + vec3(0.0, i1.x, 1.0 ));
-    vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy),
-    dot(x12.zw,x12.zw)), 0.0);
-    m = m*m ;
-    m = m*m ;
-    vec3 x = 2.0 * fract(p * C.www) - 1.0;
-    vec3 h = abs(x) - 0.5;
-    vec3 ox = floor(x + 0.5);
-    vec3 a0 = x - ox;
-    m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
-    vec3 g;
-    g.x  = a0.x  * x0.x  + h.x  * x0.y;
-    g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-    return 130.0 * dot(m, g);
-}
-
-float noise_perlin(vec2 p, perlin_noise_params params)
-{
-    float value = 0.0f;
-    float a     = 1.0f;                // current magnitude
-    float f     = 1.0f * params.scale; // current frequency
-
-    for (int k = 0; k < params.octave; k++) {
-        float n = snoise(p * f + params.speed * time);
-        value += a * (0.5f + 0.5f * n);
-        f *= params.frequency_gain;
-        a *= params.persistency;
-    }
-
-    return value * params.mult;
-}
-
-perlin_noise_params small_sand_movement = perlin_noise_params(0.8f, 1.3f, 2, .02f, 0.3f, 1.0f);
 
 void main()
 {
@@ -105,7 +72,14 @@ void main()
 	// Height map
 	vec2 fixed_vertex_uv = vertex_position.xy * sand_texture_scale;
     vec3 height_map      = (texture(height_map, fixed_vertex_uv).xyz * 2.0f) - 1.0f; // Unpack
-	position += normal * vec4(height_map, 0) * (ridge_coefficient + noise_perlin(position.xy, small_sand_movement));
+    
+    // Sand-specific
+    if (material.texture_settings.is_sand) {
+        float rockiness = 1.0f - pow(max(0.0f, dot(normal.xyz, vec3(0, 0, 1))), 3.0f);
+        height_map = mix(height_map, (texture(rock_height, fixed_vertex_uv).xyz * 2.0f) - 1.0f, rockiness);
+    }
+
+	position += normalize(normal) * vec4(height_map, 0) * ridge_coefficient;
 
 	// The projected position of the vertex in the normalized device coordinates:
 	vec4 position_projected = projection * view * position;

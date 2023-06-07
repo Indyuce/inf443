@@ -41,7 +41,7 @@ struct implicit_surface_structure
 	implicit_surface_field_structure field_param;
 
 	opengl_shader_structure shader;
-	float floor_level;
+	float ground_level;
 
 	// Helpers functions that should be called in the scene
 	// *************************************************** //
@@ -53,7 +53,7 @@ struct implicit_surface_structure
 	void update_marching_cube(field_function_structure const& field_function, float isovalue);
 
 	//   Helper function to quickly set the domain (number of samples, and dimensions)
-	void set_domain(int samples, cgp::vec3 const& length);
+	void set_domain(float const& resolution, cgp::vec3 const& length);
 	
 	//   Helper function to update the gui and call the associated update functions
 	void gui_update(environment_structure& env, field_function_structure& field_function);

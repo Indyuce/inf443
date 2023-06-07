@@ -48,8 +48,8 @@ void scene_structure::initialize()
 		project::path + "shaders/terrain/vert.glsl",
 		project::path + "shaders/terrain/frag.glsl");
 
-	field_function.floor_level = environment.floor_level;
-	implicit_surface.floor_level = environment.floor_level;
+	field_function.ground_level = environment.ground_level;
+	implicit_surface.ground_level = environment.ground_level;
 	implicit_surface.shader = environment.shader;
 	implicit_surface.set_domain(environment.domain.resolution, environment.domain.length);
 	implicit_surface.update_field(field_function, environment.isovalue);
@@ -65,7 +65,20 @@ void scene_structure::initialize()
 		project::path + "assets/texture/cartoon_sand/Base_height.png",
 		GL_REPEAT,
 		GL_REPEAT);
+	implicit_surface.drawable_param.shape.supplementary_texture["rock_texture"].load_and_initialize_texture_2d_on_gpu(
+		project::path + "assets/texture/rock/Albedo.png",
+		GL_REPEAT,
+		GL_REPEAT);
+	implicit_surface.drawable_param.shape.supplementary_texture["rock_height"].load_and_initialize_texture_2d_on_gpu(
+		project::path + "assets/texture/rock/Height.png",
+		GL_REPEAT,
+		GL_REPEAT);
+	implicit_surface.drawable_param.shape.supplementary_texture["rock_normal"].load_and_initialize_texture_2d_on_gpu(
+		project::path + "assets/texture/rock/Normal.png",
+		GL_REPEAT,
+		GL_REPEAT);
 	implicit_surface.drawable_param.shape.material.texture_settings.use_normal_map = true;
+	implicit_surface.drawable_param.shape.material.texture_settings.is_sand = true;
 	implicit_surface.drawable_param.shape.material.phong.ambient = .3f;
 	implicit_surface.drawable_param.shape.material.phong.diffuse = .8f;
 	implicit_surface.drawable_param.shape.material.phong.specular = .03f;
@@ -86,9 +99,9 @@ void scene_structure::initialize()
 	water_surface.set_shaders(water_shader);
 	water_surface.set_textures(implicit_surface.drawable_param.shape.texture, skybox.texture, multipass_rendering.fbo_pass_2.texture, multipass_rendering.fbo_pass_2.texture_extra);
 
-	// Animation and models
+	// Spawn fish groups
 	// ***************************************** //
-	fish_manager.initialize(environment.domain.length, environment.floor_level, project::path);
+	fish_manager.initialize(environment.domain.length, environment.ground_level, project::path);
 
 	for (int i = 0; i < fish_manager.fish_groups_number; i++) {
 
@@ -98,7 +111,7 @@ void scene_structure::initialize()
 		vec3 const group_dir = 2 * vec3(rand_double(rand_gen) - .5f, rand_double(rand_gen) - .5f, rand_double(rand_gen) - .5f);
 		vec3 group_pos;
 		do {
-			group_pos = { environment.domain.length.x * (rand_double(rand_gen) - 0.5), environment.domain.length.y * (rand_double(rand_gen) - 0.5), environment.floor_level * (.5f) };
+			group_pos = { environment.domain.length.x * (rand_double(rand_gen) - 0.5), environment.domain.length.y * (rand_double(rand_gen) - 0.5), environment.ground_level * (.5f) };
 		} while (field_function(group_pos) <= 0);
 
 		// Spawn fishes of group
@@ -114,6 +127,8 @@ void scene_structure::initialize()
 		}
 	}
 
+	test_drawable.initialize_data_on_gpu(mesh_primitive_sphere(30.0f));
+
 	// Spawn algas
 	terrain.initialize(project::path);
 	for (int j = 0; j < terrain.num_group; j++) {
@@ -125,7 +140,9 @@ void scene_structure::initialize()
 		std::vector<alga> algas;
 		for (int i = 0; i < number_group_algas; i++) {
 			struct alga alga;
-			alga.position = group_position + 30.0f * vec3{ 5 * rand_double(rand_gen) - 2.5f, 2 * rand_double(rand_gen) - 2.5f, 0 };
+			vec3 individual_position = group_position + 30.0f * vec3(5 * rand_double(rand_gen) - 2.5f, 2 * rand_double(rand_gen) - 2.5f, 0);
+			individual_position.z = get_height(individual_position.x, individual_position.y);
+			alga.position = individual_position;
 			alga.amplitude = 0.5 + 0.3 * rand_double(rand_gen);
 			alga.frequency = 8 + 3 * rand_double(rand_gen);
 			alga.rotation = rand_double(rand_gen) * 2 * std::_Pi;
@@ -393,8 +410,8 @@ void scene_structure::display_gui()
 		ImGui::Checkbox("Cinematic Camera", &camera_movement.cinematic_mode);
 		ImGui::Checkbox("Stylish Borders", &environment.style_borders);
 		ImGui::SliderFloat("Stylish Borders Exp", &environment.style_borders_exp, .5f, 3.0f);
-		ImGui::Checkbox("Move Sun", &environment.move_sun);
-		ImGui::Checkbox("Revert Camera", &environment.revert);
+		ImGui::Checkbox("Automatic Sun Movement", &environment.move_sun);
+		ImGui::Checkbox("Revert Camera (Experimental)", &environment.revert);
 	}
 
 	if (ImGui::CollapsingHeader("Atmosphere Shader")) {

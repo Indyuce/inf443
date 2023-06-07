@@ -19,13 +19,13 @@ static void update_normals(std::vector<vec3>& normals, int number_of_vertex, gri
 		normals[k] = -normalize((1 - alpha) * n0 + alpha * n1, { 1,0,0 });
 	}
 }
-
+/*
 static void update_colors(std::vector<vec3>& color, int number_of_vertex, std::vector<vec3>& position, field_function_structure const& field_function) {
 	for (int k = 0; k < number_of_vertex; ++k) {
 		color[k] = field_function.color_at(position[k]);
 	}
 }
-/*
+
 static void update_uvs(std::vector<vec3>& uv, int number_of_vertex, std::vector<vec3>& position, field_function_structure const& field_function) {
 	for (int k = 0; k < number_of_vertex; ++k) {
 		uv[k] = field_function.uv_at(position[k]);
@@ -105,9 +105,9 @@ int3 to_int3(vec3 const& vec) {
 	return int3((int)vec.x, (int)vec.y, (int)vec.z);
 }
 
-void implicit_surface_structure::set_domain(int resolution, cgp::vec3 const& length)
+void implicit_surface_structure::set_domain(float const& resolution, cgp::vec3 const& length)
 {
-	field_param.domain = spatial_domain_grid_3D::from_center_length({ 0, 0, length.z / 2.0f + floor_level }, length, to_int3(length / resolution));
+	field_param.domain = spatial_domain_grid_3D::from_center_length({ 0, 0, length.z / 2.0f + ground_level }, length, to_int3(length / resolution));
 }
 
 void implicit_surface_structure::display_gui_implicit_surface(bool& is_update_field, bool& is_update_marching_cube, bool& is_save_obj, environment_structure& gui, field_function_structure& field_function)
@@ -127,16 +127,16 @@ void implicit_surface_structure::display_gui_implicit_surface(bool& is_update_fi
 		is_save_obj = ImGui::Button("Export mesh as obj");
 	}
 
-	if (ImGui::CollapsingHeader("Field Function"))
+	if (ImGui::CollapsingHeader("Procedural Caves"))
 	{
 		// ImGui::Text("Floor");
 		//is_update_field |= ImGui::SliderFloat("Floor Att Dist", &field_function.floor_att_dist, 3.0f, 30.0f);
-		is_update_field |= ImGui::SliderFloat("Persistency", &field_function.floor_perlin.persistency, 0.1f, .9f);
-		is_update_field |= ImGui::SliderFloat("Frequency Gain", &field_function.floor_perlin.frequency_gain, 0.1f, 10.0f);
-		is_update_field |= ImGui::SliderInt("Octave", &field_function.floor_perlin.octave, 1, 5);
-		is_update_field |= ImGui::SliderFloat("Scale", &field_function.floor_perlin.scale, 0.1f, 2.5f);
-		is_update_field |= ImGui::SliderFloat("Mult", &field_function.floor_perlin.multiplier, 0.1f, 3.0f);
-		is_update_field |= ImGui::SliderFloat("Offset", &field_function.floor_perlin.offset, -10.0f, 10.0f);
+		is_update_field |= ImGui::SliderFloat("Persistency", &field_function.cave_perlin.persistency, 0.1f, .9f);
+		is_update_field |= ImGui::SliderFloat("Frequency Gain", &field_function.cave_perlin.frequency_gain, 0.1f, 10.0f);
+		is_update_field |= ImGui::SliderInt("Octave", &field_function.cave_perlin.octave, 1, 5);
+		is_update_field |= ImGui::SliderFloat("Scale", &field_function.cave_perlin.scale, 0.0005f, .001f);
+		is_update_field |= ImGui::SliderFloat("Mult", &field_function.cave_perlin.multiplier, 1.0f, 10.0f);
+		is_update_field |= ImGui::SliderFloat("Offset", &field_function.cave_perlin.offset, -10.0f, 10.0f);
 	}
 }
 

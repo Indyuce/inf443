@@ -58,30 +58,14 @@ float perlin_noise_params::compute(cgp::vec2 const& pos, float time) const
 
 field_function_structure::field_function_structure() {
     floor_att_dist = 2.0f;
+    floor_1_level = -200.0f;
     //cave_height_1 = 30.0f;
     //cave_height_max = cave_height_1 * 2.0f;
 
-    floor_perlin = perlin_noise_params(0.175f, 1.25f, 2, .005f, 0.188f * 12.1825, -.17f);
-    //cave_perlin = perlin_noise_params(0.307f, 2.193f, 3, .015f, 5.47f, 4.6f);
+    floor_perlin = perlin_noise_params(0.175f, 1.25f, 2, .005f, 1.0f, -2.3f);
+    cave_perlin = perlin_noise_params(0.31f, 2.81f, 3, .0015f, 6.8f, 4.43f);
     //rock_color_perlin = perlin_noise_params(0.4f, 3.0f, 4, .05f, 1.0f, 0.0f);
     //mossy_rocks_perlin = perlin_noise_params(0.4f, 3.0f, 2, .05f, 10.0f, 3.0f);
-}
-
-/// <summary>
-/// https://www.johndcook.com/blog/2010/01/20/how-to-compute-the-soft-maximum/
-/// </summary>
-/// <param name="x"></param>
-/// <param name="y"></param>
-/// <returns>Soft maximum between x and y</returns>
-float soft_max(float x, float y)
-{
-    const float maximum = std::max(x, y);
-    const float minimum = std::min(x, y);
-    return maximum + log(1.0 + exp(minimum - maximum));
-}
-
-float soft_min(float x, float y) {
-    return -soft_max(-x, -y);
 }
 
 /// <summary>
@@ -141,22 +125,16 @@ float field_function_structure::operator()(cgp::vec3 const& pos) const
     float pot = 0.0f;
 
     // Bottom hills
-    float const floor_pot = floor_perlin.compute(vec2(pos.x, pos.y)) * exp(-(pos.z - floor_level) / floor_att_dist);
+    float const height = pos.z - ground_level;
+    float const floor_pot = floor_perlin.compute(vec2(pos.x, pos.y)) * exp(-height / floor_att_dist);
     pot += floor_pot;
     
-    /*
     // Add caves
-    if (z < cave_height_max) {
-        bool const low = z < cave_height_1;
-        float const z_mod = mod(z, cave_height_1);
-        float const mult = (0.9f + 0.2f * z_mod / cave_height_1) * (low ? 1.0f : 0.9f);
-        float cave_pot = noise_perlin({ x * cave_perlin.scale, y * cave_perlin.scale, z_mod * cave_perlin.scale }, cave_perlin.octave, cave_perlin.persistency, cave_perlin.frequency_gain * (low ? 1.3f : 1.0f));
-        cave_pot = cave_pot * cave_perlin.multiplier * mult - cave_perlin.offset;
-        pot = soft_max(cave_pot, pot);
-    }
-
-    // Make sure the floor is always displayed
-    */
-
+    bool const low = pos.z < floor_1_level;
+    float const cave_height = floor_1_level - ground_level;
+    float const mult = (0.5f + 0.6f * height / cave_height) * (low ? 1.0f : 0.9f * exp(-(pos.z - floor_1_level) * 2.0f));
+    float const cave_pot = mult * cave_perlin.compute(pos);
+    pot += cave_pot;
+    
     return pot;
 }

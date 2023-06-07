@@ -15,6 +15,7 @@ namespace cgp
 	struct texture_settings_parameters {
 		bool active = true;
 		bool use_normal_map = false;
+		bool is_sand = false;
 		bool inverse_v = true;
 		bool two_sided = false;
 	};
